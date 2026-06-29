@@ -377,6 +377,32 @@ tbody tr:hover{background:#f8fbff;}
     flex-wrap:wrap;
     justify-content:flex-end;
 }
+.status-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:4px 9px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:bold;
+    white-space:nowrap;
+}
+.status-sold{
+    background:#dcfce7;
+    color:#166534;
+}
+.status-unsold{
+    background:#fff7ed;
+    color:#9a3412;
+}
+.btn-status-sold{
+    background:#dcfce7;
+    color:#166534;
+}
+.btn-status-unsold{
+    background:#fff7ed;
+    color:#9a3412;
+}
 .pc-list-actions{
     display:flex;
     gap:8px;
@@ -471,14 +497,6 @@ tbody tr:hover{background:#f8fbff;}
 </head>
 <body>
 <div class="app">
-    <div class="header">
-        <div>
-            <h1>PC Builder</h1>
-            <p>Alegi componentele, verifici compatibilitatea CPU/MB după socket, salvezi fiecare configurație ca PC1, PC2 etc., apoi poți importa și exporta toate calculatoarele pe foi separate.</p>
-        </div>
-        <span class="badge">Salvare automată în browser</span>
-    </div>
-
     <div class="layout">
         <section class="card">
             <div class="card-title">
@@ -833,6 +851,7 @@ function loadBuilds(){
             name:b.name || `PC${index + 1}`,
             components:normalizeComponents(b.components || b.data || []),
             salePrice:Number(b.salePrice) || 0,
+            sold:Boolean(b.sold),
             createdAt:b.createdAt || new Date().toISOString(),
             updatedAt:b.updatedAt || b.createdAt || new Date().toISOString()
         }));
@@ -854,13 +873,14 @@ function getNextPCName(){
     return "PC" + (max + 1);
 }
 
-function createBuild(name, components, salePrice){
+function createBuild(name, components, salePrice, sold = false){
     const now = new Date().toISOString();
     return {
         id:makeId(),
         name:name || getNextPCName(),
         components:normalizeComponents(components),
         salePrice:Number(salePrice) || 0,
+        sold:Boolean(sold),
         createdAt:now,
         updatedAt:now
     };
@@ -1140,6 +1160,15 @@ function renameBuild(id, value){
     renderChart();
 }
 
+function toggleSoldStatus(id){
+    const build = getBuildById(id);
+    if(!build) return;
+    build.sold = !Boolean(build.sold);
+    build.updatedAt = new Date().toISOString();
+    persistBuilds();
+    renderSavedBuilds();
+}
+
 function deleteBuild(id){
     const build = getBuildById(id);
     if(!build) return;
@@ -1195,13 +1224,21 @@ function renderSavedBuilds(){
         const profit = sale - total;
         const row = document.createElement("div");
         row.className = "pc-row" + (build.id === activeBuildId ? " active" : "");
+        const sold = Boolean(build.sold);
+        const statusText = sold ? "Vândut" : "Nevândut";
+        const statusClass = sold ? "status-sold" : "status-unsold";
+        const statusBtnClass = sold ? "btn-status-sold" : "btn-status-unsold";
         row.innerHTML = `
             <div class="pc-info">
                 <input class="pc-name-input" value="${escapeHTML(build.name)}" oninput="renameBuild('${build.id}', this.value)">
-                <div class="pc-meta">${build.components.length} componente · Cost ${formatMoney(total)} lei · Vânzare ${formatMoney(sale)} lei · Profit ${formatMoney(profit)} lei</div>
+                <div class="pc-meta">
+                    <span class="status-pill ${statusClass}">${statusText}</span>
+                    ${build.components.length} componente · Cost ${formatMoney(total)} lei · Vânzare ${formatMoney(sale)} lei · Profit ${formatMoney(profit)} lei
+                </div>
             </div>
             <div class="pc-actions">
                 <button class="btn btn-blue btn-small" onclick="loadSavedPC('${build.id}')">Deschide</button>
+                <button class="btn ${statusBtnClass} btn-small" onclick="toggleSoldStatus('${build.id}')">${statusText}</button>
                 <button class="btn btn-red btn-small" onclick="deleteBuild('${build.id}')">Șterge</button>
             </div>
         `;
@@ -1516,6 +1553,7 @@ function createBuildSheetRows(build){
     if(build.components.length === 0){
         rows.push({
             "Nume PC": build.name,
+            "Status": build.sold ? "Vândut" : "Nevândut",
             "Nr componentă": "",
             "Categorie": "",
             "Componentă": "",
@@ -1532,6 +1570,7 @@ function createBuildSheetRows(build){
     build.components.forEach((item,componentIndex)=>{
         rows.push({
             "Nume PC": build.name,
+            "Status": componentIndex === 0 ? (build.sold ? "Vândut" : "Nevândut") : "",
             "Nr componentă": componentIndex + 1,
             "Categorie": item.cat,
             "Componentă": item.name,
@@ -1573,6 +1612,7 @@ function exportExcel(){
         return {
             "Nr": index + 1,
             "Nume PC": build.name,
+            "Status": build.sold ? "Vândut" : "Nevândut",
             "Foaie Excel": pcSheetNames[index],
             "Număr componente": build.components.length,
             "Cost total lei": totalBuy,
@@ -1658,19 +1698,33 @@ function importFile(event){
 function parseImportedJSON(text){
     const parsed = JSON.parse(text);
     const rawBuilds = Array.isArray(parsed) ? parsed : (parsed.builds || []);
-    return rawBuilds.map((b,index)=>createBuild(b.name || `PC${index + 1}`, b.components || b.data || [], b.salePrice || 0));
+    return rawBuilds.map((b,index)=>createBuild(
+        b.name || `PC${index + 1}`,
+        b.components || b.data || [],
+        b.salePrice || 0,
+        Boolean(b.sold)
+    ));
+}
+
+function parseSoldStatus(value){
+    const text = String(value || "").trim().toLowerCase();
+    return ["vândut", "vandut", "sold", "da", "yes", "1", "true"].includes(text);
 }
 
 function parseRowsIntoBuildMap(rows, map, fallbackName){
     rows.forEach(row=>{
         const pcName = String(row["Nume PC"] || row["PC"] || row["Calculator"] || fallbackName || "PC importat").trim() || "PC importat";
         if(!map.has(pcName)){
-            map.set(pcName, {name:pcName, components:[], salePrice:0});
+            map.set(pcName, {name:pcName, components:[], salePrice:0, sold:false});
         }
         const build = map.get(pcName);
         const sale = Number(row["Preț vânzare PC lei"] || row["Pret vanzare PC lei"] || row["Preț vânzare lei"] || 0);
         if(Number.isFinite(sale) && sale > 0){
             build.salePrice = sale;
+        }
+        const status = row["Status"] || row["Vândut"] || row["Vandut"] || row["Sold"] || "";
+        if(status !== ""){
+            build.sold = parseSoldStatus(status);
         }
         const cat = String(row["Categorie"] || "").trim();
         const component = String(row["Componentă"] || row["Componenta"] || "").trim();
@@ -1698,7 +1752,7 @@ function parseImportedWorkbook(buffer){
         });
     }
 
-    return Array.from(map.values()).map((b,index)=>createBuild(b.name || `PC${index + 1}`, b.components, b.salePrice));
+    return Array.from(map.values()).map((b,index)=>createBuild(b.name || `PC${index + 1}`, b.components, b.salePrice, Boolean(b.sold)));
 }
 
 function uniqueImportedName(name){
