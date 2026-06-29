@@ -263,7 +263,7 @@ input:focus, select:focus{
     display:flex;
     gap:7px;
     flex-wrap:wrap;
-    margin-top:7px;
+    margin-bottom:5px;
 }
 .quick-margin button{
     border:1px solid #dec36d;
@@ -377,6 +377,48 @@ tbody tr:hover{background:#f8fbff;}
     flex-wrap:wrap;
     justify-content:flex-end;
 }
+
+.pc-components-details{
+    grid-column:1 / -1;
+    padding:11px;
+    border:1px dashed #c7d2e2;
+    border-radius:13px;
+    background:#f8fafc;
+}
+.pc-components-head{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center;
+    margin-bottom:8px;
+    color:#344054;
+    font-size:13px;
+}
+.pc-components-head strong{font-size:14px;}
+.pc-components-table-wrap{
+    overflow:auto;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:#fff;
+}
+.pc-components-details table{
+    min-width:560px;
+    font-size:13px;
+}
+.pc-components-details th{
+    position:static;
+    font-size:12px;
+}
+.pc-components-details th,
+.pc-components-details td{
+    padding:8px 9px;
+}
+.pc-components-total{
+    margin-top:8px;
+    text-align:right;
+    font-weight:bold;
+    color:#172033;
+}
 .status-pill{
     display:inline-flex;
     align-items:center;
@@ -480,6 +522,55 @@ tbody tr:hover{background:#f8fbff;}
 .legend-profit{background:#159447;}
 .legend-loss{background:#d92d20;}
 
+.inventory-form{
+    display:grid;
+    grid-template-columns:160px 1fr 150px 130px auto;
+    gap:10px;
+    align-items:end;
+    margin-bottom:14px;
+    padding:14px;
+    border-radius:15px;
+    background:#f8fafc;
+    border:1px solid var(--line);
+}
+.inventory-summary{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:14px;
+}
+.inventory-stat{
+    padding:13px 14px;
+    border-radius:15px;
+    background:#f8fafc;
+    border:1px solid var(--line);
+}
+.inventory-stat .label{
+    color:var(--muted);
+    font-size:12px;
+    margin-bottom:6px;
+}
+.inventory-stat .value{
+    font-size:22px;
+    font-weight:bold;
+}
+.inventory-actions{
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+    margin-top:14px;
+}
+.qty-input{max-width:95px;padding:9px;}
+.inventory-price-input{max-width:130px;padding:9px;}
+.field-hint{display:block;margin-top:5px;color:var(--muted);font-size:12px;font-weight:normal;}
+@media(max-width:980px){
+    .inventory-form,.inventory-summary{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:620px){
+    .inventory-form,.inventory-summary{grid-template-columns:1fr;}
+}
+
 @media(max-width:980px){
     .layout{grid-template-columns:1fr;}
     .summary-grid,.chart-summary{grid-template-columns:repeat(2,1fr);}
@@ -521,12 +612,11 @@ tbody tr:hover{background:#f8fbff;}
                 <div class="component-list" id="components"></div>
 
                 <div class="add-box">
-                    <label>Componentă selectată</label>
                     <div class="selected-name" id="selectedName">Nu este selectată nicio componentă.</div>
 
                     <div class="form-row">
                         <div>
-                            <label for="buyPrice">Preț cumpărare componentă</label>
+                            <label for="buyPrice">Preț cumpărare</label>
                             <input id="buyPrice" type="number" min="0" step="1" placeholder="lei">
                         </div>
                         <button class="btn btn-primary" onclick="addComponent()">Adaugă</button>
@@ -554,22 +644,22 @@ tbody tr:hover{background:#f8fbff;}
                     <div class="active-pc-line">PC activ: <b id="activePcLabel">Nesalvat</b></div>
                     <div class="pc-list" id="pcList"></div>
                     <div class="pc-list-actions">
-                        <button class="btn btn-secondary btn-small" onclick="newDraft()">PC nou gol</button>
-                        <button class="btn btn-primary btn-small" onclick="addCurrentAsPC()">Adaugă configurația ca PC nou</button>
+                        <button class="btn btn-secondary btn-small" onclick="newDraft()">PC nou</button>
+                        <button class="btn btn-primary btn-small" onclick="addCurrentAsPC()">Adaugă PC</button>
                     </div>
                 </div>
 
                 <div class="summary-grid">
                     <div class="stat">
-                        <div class="label">Cost total automat</div>
+                        <div class="label">Cost componente</div>
                         <div class="value"><span id="totalBuy">0</span> lei</div>
                     </div>
                     <div class="stat">
-                        <div class="label">Preț vânzare PC</div>
+                        <div class="label">Preț vânzare</div>
                         <div class="value"><span id="saleDisplay">0</span> lei</div>
                     </div>
                     <div class="stat profit" id="profitCard">
-                        <div class="label">Profit total</div>
+                        <div class="label">Profit</div>
                         <div class="value"><span id="profitDisplay">0</span> lei</div>
                     </div>
                     <div class="stat">
@@ -580,11 +670,9 @@ tbody tr:hover{background:#f8fbff;}
 
                 <div class="sell-panel">
                     <div>
-                        <label for="salePrice">Introdu prețul de vânzare doar după ce ai completat componentele</label>
                         <input id="salePrice" type="number" min="0" step="1" placeholder="Preț vânzare total PC, lei" oninput="saveSalePrice(); render()">
                     </div>
                     <div>
-                        <label>Setare rapidă după profit</label>
                         <div class="quick-margin">
                             <button type="button" onclick="setMargin(10)">+10%</button>
                             <button type="button" onclick="setMargin(15)">+15%</button>
@@ -596,7 +684,6 @@ tbody tr:hover{background:#f8fbff;}
 
                 <div class="compatibility-panel neutral" id="compatibilityPanel">
                     <strong>Compatibilitate CPU / MB</strong>
-                    Alege un procesor și o placă de bază pentru verificarea socketului.
                 </div>
 
                 <div class="table-wrap">
@@ -615,8 +702,8 @@ tbody tr:hover{background:#f8fbff;}
                 </div>
 
                 <div class="footer-actions">
-                    <button class="btn btn-primary" onclick="addCurrentAsPC()">Adaugă în listă</button>
-                    <button class="btn btn-blue" onclick="exportExcel()">Export toate PC pe foi</button>
+                    <button class="btn btn-primary" onclick="addCurrentAsPC()">Adaugă</button>
+                    <button class="btn btn-blue" onclick="exportExcel()">Export</button>
                     <button class="btn btn-secondary" onclick="openImport()">Import</button>
                     <button class="btn btn-secondary" onclick="printBuild()">Print / PDF</button>
                     <input id="importFile" class="hidden-file" type="file" accept=".xlsx,.xls,.json" onchange="importFile(event)">
@@ -627,21 +714,21 @@ tbody tr:hover{background:#f8fbff;}
 
     <section class="card chart-card">
         <div class="card-title">
-            <h2>3. Grafic pe lista calculatoarelor</h2>
+            <h2>3. Graficul calculatoarelor</h2>
             <span class="badge" id="chartCount">0 PC-uri</span>
         </div>
         <div class="panel-body">
             <div class="chart-summary" id="chartTotals">
                 <div class="chart-total">
-                    <div class="label">Cost total calculatoare</div>
+                    <div class="label">Cost total</div>
                     <div class="value">0 lei</div>
                 </div>
                 <div class="chart-total">
-                    <div class="label">Vânzare totală</div>
+                    <div class="label">Vânzare</div>
                     <div class="value">0 lei</div>
                 </div>
                 <div class="chart-total profit">
-                    <div class="label">Profit total</div>
+                    <div class="label">Profit</div>
                     <div class="value">0 lei</div>
                 </div>
             </div>
@@ -655,6 +742,71 @@ tbody tr:hover{background:#f8fbff;}
                 <span class="legend-item"><span class="legend-dot legend-sale"></span>Vânzare</span>
                 <span class="legend-item"><span class="legend-dot legend-profit"></span>Profit</span>
                 <span class="legend-item"><span class="legend-dot legend-loss"></span>Pierdere</span>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="card chart-card">
+        <div class="card-title">
+            <h2>4. Stoc componente</h2>
+            <span class="badge" id="inventoryCount">0 poziții</span>
+        </div>
+        <div class="panel-body">
+            <div class="inventory-form">
+                <div>
+                    <label for="inventoryCategory">Categorie</label>
+                    <select id="inventoryCategory" onchange="renderInventoryComponentOptions(true)"></select>
+                </div>
+                <div>
+                    <label for="inventoryName">Componentă</label>
+                    <input id="inventoryName" list="inventoryComponentOptions" placeholder="Alege sau scrie componenta...">
+                    <datalist id="inventoryComponentOptions"></datalist>
+                </div>
+                <div>
+                    <label for="inventoryPrice">Preț bucata</label>
+                    <input id="inventoryPrice" type="number" min="0" step="1" placeholder="lei">
+                </div>
+                <div>
+                    <label for="inventoryQty">Cantitate</label>
+                    <input id="inventoryQty" type="number" min="1" step="1" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="addInventoryItem()">Adaugă</button>
+            </div>
+
+            <div class="inventory-summary" id="inventoryTotals">
+                <div class="inventory-stat">
+                    <div class="label">Poziții în stoc</div>
+                    <div class="value">0</div>
+                </div>
+                <div class="inventory-stat">
+                    <div class="label">Cantitate totală</div>
+                    <div class="value">0</div>
+                </div>
+                <div class="inventory-stat">
+                    <div class="label">Valoare totală</div>
+                    <div class="value">0 lei</div>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Categorie</th>
+                            <th>Componentă</th>
+                            <th>Preț bucata</th>
+                            <th>Cantitate</th>
+                            <th>Total</th>
+                            <th>Șterge</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryList"></tbody>
+                </table>
+            </div>
+
+            <div class="inventory-actions">
+                <button class="btn btn-secondary" onclick="resetInventory()">Reset stoc</button>
             </div>
         </div>
     </section>
@@ -808,12 +960,15 @@ const LEGACY_OLD_KEYS = ["pc"];
 const LEGACY_SALE_KEY = "pc_builder_sale_price_v3";
 const BUILDS_KEY = "pc_builder_saved_builds_v4";
 const ACTIVE_BUILD_KEY = "pc_builder_active_build_v4";
+const INVENTORY_KEY = "pc_builder_inventory_v1";
 
 let builds = loadBuilds();
 let activeBuildId = localStorage.getItem(ACTIVE_BUILD_KEY) || null;
 let data = [];
+let inventory = loadInventory();
 let selectedCat = "CPU";
 let selectedComp = null;
+let expandedBuildIds = new Set();
 
 function normalizeComponents(items){
     if(!Array.isArray(items)) return [];
@@ -821,7 +976,7 @@ function normalizeComponents(items){
         cat:x.cat || x.category || x["Categorie"] || "",
         name:x.name || x.component || x["Componentă"] || x["Componenta"] || "",
         socket:x.socket || x["Socket"] || "",
-        price:Number(x.price ?? x.buyPrice ?? x["Preț cumpărare lei"] ?? x["Pret cumparare lei"] ?? 0) || 0
+        price:Number(x.price ?? x.buyPrice ?? x["Preț cumpărare"] ?? x["Pret cumparare"] ?? 0) || 0
     })).filter(x=>x.cat && x.name);
 }
 
@@ -859,6 +1014,29 @@ function loadBuilds(){
         return [];
     }
 }
+
+function normalizeInventory(items){
+    if(!Array.isArray(items)) return [];
+    return items.map(x=>({
+        cat:String(x.cat || x.category || x["Categorie"] || "").trim(),
+        name:String(x.name || x.component || x["Componentă"] || x["Componenta"] || "").trim(),
+        price:Number(x.price ?? x.buyPrice ?? x["Preț bucata"] ?? x["Pret bucata"] ?? x["Preț"] ?? x["Pret"] ?? 0) || 0,
+        qty:Math.max(0, Number(x.qty ?? x.quantity ?? x["Cantitate"] ?? 0) || 0)
+    })).filter(x=>x.cat && x.name);
+}
+
+function loadInventory(){
+    try{
+        return normalizeInventory(JSON.parse(localStorage.getItem(INVENTORY_KEY) || "[]"));
+    }catch(e){
+        return [];
+    }
+}
+
+function persistInventory(){
+    localStorage.setItem(INVENTORY_KEY, JSON.stringify(inventory));
+}
+
 
 function makeId(){
     return "pc_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
@@ -980,11 +1158,13 @@ function init(){
     }
 
     renderCategories();
+    renderInventoryCategoryOptions();
     renderSocketFilter();
     renderComponents();
     render();
     renderSavedBuilds();
     renderChart();
+    renderInventory();
     updateActivePcLabel();
 
     document.getElementById("buyPrice").addEventListener("keydown", function(e){
@@ -1174,6 +1354,7 @@ function deleteBuild(id){
     if(!build) return;
     if(!confirm(`Ștergi ${build.name}?`)) return;
     builds = builds.filter(b=>b.id !== id);
+    expandedBuildIds.delete(id);
     if(activeBuildId === id){
         activeBuildId = null;
         data = [];
@@ -1219,7 +1400,8 @@ function renderSavedBuilds(){
     }
 
     builds.forEach(build=>{
-        const total = getBuildTotal(build);
+        const components = normalizeComponents(build.components);
+        const total = components.reduce((sum,item)=>sum + (Number(item.price) || 0), 0);
         const sale = Number(build.salePrice) || 0;
         const profit = sale - total;
         const row = document.createElement("div");
@@ -1228,23 +1410,66 @@ function renderSavedBuilds(){
         const statusText = sold ? "Vândut" : "Nevândut";
         const statusClass = sold ? "status-sold" : "status-unsold";
         const statusBtnClass = sold ? "btn-status-sold" : "btn-status-unsold";
+        const isExpanded = expandedBuildIds.has(build.id);
+        const componentRows = components.length ? components.map((item,index)=>`
+            <tr>
+                <td>${index + 1}</td>
+                <td>${escapeHTML(item.cat || "-")}</td>
+                <td>${escapeHTML(item.name || "-")}</td>
+                <td>${item.socket ? `<span class="socket-pill">${escapeHTML(item.socket)}</span>` : "-"}</td>
+                <td><b>${formatMoney(item.price)}</b> lei</td>
+            </tr>
+        `).join("") : '<tr><td colspan="5" class="table-empty">Acest PC nu are componente salvate.</td></tr>';
+
         row.innerHTML = `
             <div class="pc-info">
                 <input class="pc-name-input" value="${escapeHTML(build.name)}" oninput="renameBuild('${build.id}', this.value)">
                 <div class="pc-meta">
                     <span class="status-pill ${statusClass}">${statusText}</span>
-                    ${build.components.length} componente · Cost ${formatMoney(total)} lei · Vânzare ${formatMoney(sale)} lei · Profit ${formatMoney(profit)} lei
+                    ${components.length} componente · Cost ${formatMoney(total)} lei · Vânzare ${formatMoney(sale)} lei · Profit ${formatMoney(profit)} lei
                 </div>
             </div>
             <div class="pc-actions">
                 <button class="btn btn-blue btn-small" onclick="loadSavedPC('${build.id}')">Deschide</button>
+                <button class="btn btn-secondary btn-small" onclick="toggleBuildDetails('${build.id}')">${isExpanded ? "Ascunde" : "Componente"}</button>
                 <button class="btn ${statusBtnClass} btn-small" onclick="toggleSoldStatus('${build.id}')">${statusText}</button>
                 <button class="btn btn-red btn-small" onclick="deleteBuild('${build.id}')">Șterge</button>
             </div>
+            ${isExpanded ? `
+            <div class="pc-components-details">
+                <div class="pc-components-head">
+                    <strong>Componentele din ${escapeHTML(build.name)}</strong>
+                    <span>${components.length} poziții</span>
+                </div>
+                <div class="pc-components-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nr</th>
+                                <th>Categorie</th>
+                                <th>Componentă</th>
+                                <th>Socket</th>
+                                <th>Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>${componentRows}</tbody>
+                    </table>
+                </div>
+                <div class="pc-components-total">Total componente: ${formatMoney(total)} lei</div>
+            </div>` : ""}
         `;
         holder.appendChild(row);
     });
     updateActivePcLabel();
+}
+
+function toggleBuildDetails(id){
+    if(expandedBuildIds.has(id)){
+        expandedBuildIds.delete(id);
+    }else{
+        expandedBuildIds.add(id);
+    }
+    renderSavedBuilds();
 }
 
 
@@ -1265,15 +1490,15 @@ function updateChartTotals(chartData){
     count.textContent = chartData.length === 1 ? "1 PC" : `${chartData.length} PC-uri`;
     holder.innerHTML = `
         <div class="chart-total">
-            <div class="label">Cost total calculatoare</div>
+            <div class="label">Investiții</div>
             <div class="value">${formatMoney(totalCost)} lei</div>
         </div>
         <div class="chart-total">
-            <div class="label">Vânzare totală</div>
+            <div class="label">Vânzare</div>
             <div class="value">${formatMoney(totalSale)} lei</div>
         </div>
         <div class="chart-total profit ${totalProfit > 0 ? "positive" : totalProfit < 0 ? "negative" : ""}">
-            <div class="label">Profit total</div>
+            <div class="label">Profit</div>
             <div class="value">${formatMoney(totalProfit)} lei</div>
         </div>
     `;
@@ -1507,6 +1732,170 @@ function renderCompatibility(){
     }
 }
 
+
+function renderInventoryCategoryOptions(){
+    const select = document.getElementById("inventoryCategory");
+    if(!select) return;
+    const cats = Object.keys(DB);
+    const current = select.value || cats[0] || "";
+    select.innerHTML = cats.map(cat=>`<option value="${escapeHTML(cat)}" ${cat === current ? "selected" : ""}>${escapeHTML(cat)}</option>`).join("");
+    renderInventoryComponentOptions(false);
+}
+
+function renderInventoryComponentOptions(clearName = false){
+    const categorySelect = document.getElementById("inventoryCategory");
+    const nameInput = document.getElementById("inventoryName");
+    const datalist = document.getElementById("inventoryComponentOptions");
+    if(!categorySelect || !nameInput || !datalist) return;
+
+    const cat = categorySelect.value;
+    const items = DB[cat] || [];
+    if(clearName) nameInput.value = "";
+
+    datalist.innerHTML = items.map(item=>{
+        const name = componentName(item);
+        const socket = componentSocket(item);
+        const label = socket ? ` label="${escapeHTML(socket)}"` : "";
+        return `<option value="${escapeHTML(name)}"${label}></option>`;
+    }).join("");
+
+    nameInput.placeholder = items.length
+        ? `Alege din ${items.length} componente ${cat} sau scrie manual...`
+        : "Scrie componenta manual...";
+}
+
+function addInventoryItem(){
+    const cat = document.getElementById("inventoryCategory").value;
+    const name = document.getElementById("inventoryName").value.trim();
+    const price = Number(document.getElementById("inventoryPrice").value);
+    const qty = Number(document.getElementById("inventoryQty").value);
+
+    if(!cat || !name){
+        alert("Alege categoria și scrie denumirea componentei.");
+        return;
+    }
+    if(!Number.isFinite(price) || price < 0){
+        alert("Introdu prețul corect.");
+        return;
+    }
+    if(!Number.isFinite(qty) || qty <= 0){
+        alert("Introdu cantitatea corectă.");
+        return;
+    }
+
+    inventory.push({cat, name, price, qty});
+    persistInventory();
+    document.getElementById("inventoryName").value = "";
+    document.getElementById("inventoryPrice").value = "";
+    document.getElementById("inventoryQty").value = "1";
+    renderInventory();
+}
+
+function updateInventoryField(index, field, value){
+    if(!inventory[index]) return;
+    if(field === "price"){
+        const price = Number(value);
+        inventory[index].price = Number.isFinite(price) && price >= 0 ? price : 0;
+    }else if(field === "qty"){
+        const qty = Number(value);
+        inventory[index].qty = Number.isFinite(qty) && qty >= 0 ? qty : 0;
+    }else if(field === "cat"){
+        inventory[index].cat = String(value || "").trim();
+    }else if(field === "name"){
+        inventory[index].name = String(value || "").trim();
+    }
+    persistInventory();
+    renderInventoryTotals();
+}
+
+function deleteInventoryItem(index){
+    inventory.splice(index, 1);
+    persistInventory();
+    renderInventory();
+}
+
+function resetInventory(){
+    if(!confirm("Ștergi toate componentele din stoc?")) return;
+    inventory = [];
+    persistInventory();
+    renderInventory();
+}
+
+function renderInventoryTotals(){
+    const holder = document.getElementById("inventoryTotals");
+    const count = document.getElementById("inventoryCount");
+    if(!holder || !count) return;
+    const positions = inventory.length;
+    const totalQty = inventory.reduce((sum,item)=>sum + (Number(item.qty) || 0), 0);
+    const totalValue = inventory.reduce((sum,item)=>sum + ((Number(item.price) || 0) * (Number(item.qty) || 0)), 0);
+    count.textContent = positions === 1 ? "1 poziție" : `${positions} poziții`;
+    holder.innerHTML = `
+        <div class="inventory-stat">
+            <div class="label">Poziții în stoc</div>
+            <div class="value">${formatMoney(positions)}</div>
+        </div>
+        <div class="inventory-stat">
+            <div class="label">Cantitate</div>
+            <div class="value">${formatMoney(totalQty)}</div>
+        </div>
+        <div class="inventory-stat">
+            <div class="label">Valoare</div>
+            <div class="value">${formatMoney(totalValue)} lei</div>
+        </div>
+    `;
+}
+
+function renderInventory(){
+    const list = document.getElementById("inventoryList");
+    if(!list) return;
+    list.innerHTML = "";
+
+    if(inventory.length === 0){
+        list.innerHTML = '<tr><td colspan="6" class="table-empty">Nu ai introdus componente în stoc.</td></tr>';
+        renderInventoryTotals();
+        return;
+    }
+
+    inventory.forEach((item,index)=>{
+        const total = (Number(item.price) || 0) * (Number(item.qty) || 0);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>
+                <select onchange="updateInventoryField(${index}, 'cat', this.value)">
+                    ${Object.keys(DB).map(cat=>`<option value="${escapeHTML(cat)}" ${cat === item.cat ? "selected" : ""}>${escapeHTML(cat)}</option>`).join("")}
+                </select>
+            </td>
+            <td><input value="${escapeHTML(item.name)}" oninput="updateInventoryField(${index}, 'name', this.value)"></td>
+            <td><input class="inventory-price-input" type="number" min="0" step="1" value="${Number(item.price) || 0}" oninput="updateInventoryField(${index}, 'price', this.value)"> lei</td>
+            <td><input class="qty-input" type="number" min="0" step="1" value="${Number(item.qty) || 0}" oninput="updateInventoryField(${index}, 'qty', this.value)"></td>
+            <td><b>${formatMoney(total)} lei</b></td>
+            <td><button class="del-btn" onclick="deleteInventoryItem(${index})">X</button></td>
+        `;
+        list.appendChild(tr);
+    });
+    renderInventoryTotals();
+}
+
+function createInventorySheetRows(){
+    return inventory.map((item,index)=>({
+        "Nr": index + 1,
+        "Categorie": item.cat,
+        "Componentă": item.name,
+        "Preț bucata lei": Number(item.price) || 0,
+        "Cantitate": Number(item.qty) || 0,
+        "Total lei": (Number(item.price) || 0) * (Number(item.qty) || 0)
+    }));
+}
+
+function parseInventoryRows(rows){
+    return normalizeInventory(rows.map(row=>({
+        cat: row["Categorie"],
+        name: row["Componentă"] || row["Componenta"],
+        price: row["Preț bucata lei"] || row["Pret bucata lei"] || row["Preț"] || row["Pret"],
+        qty: row["Cantitate"]
+    })));
+}
+
 function getBuildsForExport(){
     if(builds.length > 0){
         return builds.map(b=>({
@@ -1629,6 +2018,11 @@ function exportExcel(){
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), pcSheetNames[index]);
     });
 
+    const inventoryRows = createInventorySheetRows();
+    if(inventoryRows.length > 0){
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(inventoryRows), safeSheetName("Stoc componente", usedSheetNames));
+    }
+
     XLSX.writeFile(wb, "toate_calculatoarele_pc_pe_foi.xlsx");
 }
 
@@ -1662,11 +2056,22 @@ function importFile(event){
             const replace = confirm("OK = înlocuiește lista actuală. Cancel = adaugă PC-urile importate la lista existentă.");
             if(replace){
                 builds = imported;
+                expandedBuildIds.clear();
             }else{
                 builds = builds.concat(imported.map(b=>({
                     ...b,
                     name:uniqueImportedName(b.name)
                 })));
+            }
+
+            const importedInventory = normalizeInventory(window.__lastImportedInventory || []);
+            if(importedInventory.length > 0){
+                if(replace){
+                    inventory = importedInventory;
+                }else{
+                    inventory = inventory.concat(importedInventory);
+                }
+                persistInventory();
             }
 
             activeBuildId = builds[0] ? builds[0].id : null;
@@ -1679,6 +2084,7 @@ function importFile(event){
             persistBuilds();
             clearSelection();
             render();
+            renderInventory();
             alert("Import realizat cu succes.");
         }catch(err){
             alert("Nu am putut importa fișierul. Verifică dacă este exportat din acest program.");
@@ -1697,6 +2103,7 @@ function importFile(event){
 
 function parseImportedJSON(text){
     const parsed = JSON.parse(text);
+    window.__lastImportedInventory = normalizeInventory(parsed.inventory || parsed.stoc || []);
     const rawBuilds = Array.isArray(parsed) ? parsed : (parsed.builds || []);
     return rawBuilds.map((b,index)=>createBuild(
         b.name || `PC${index + 1}`,
@@ -1739,13 +2146,21 @@ function parseRowsIntoBuildMap(rows, map, fallbackName){
 function parseImportedWorkbook(buffer){
     const wb = XLSX.read(buffer, {type:"array"});
     const map = new Map();
+    window.__lastImportedInventory = [];
+
+    const inventorySheetName = wb.SheetNames.find(name => name.toLowerCase() === "stoc componente" || name.toLowerCase() === "stoc" || name.toLowerCase() === "inventory");
+    if(inventorySheetName){
+        const inventoryRows = XLSX.utils.sheet_to_json(wb.Sheets[inventorySheetName], {defval:""});
+        window.__lastImportedInventory = parseInventoryRows(inventoryRows);
+    }
 
     if(wb.Sheets["Calculatoare"]){
         const rows = XLSX.utils.sheet_to_json(wb.Sheets["Calculatoare"], {defval:""});
         parseRowsIntoBuildMap(rows, map, "PC importat");
     }else{
         wb.SheetNames.forEach(sheetName=>{
-            if(sheetName.toLowerCase() === "sumar") return;
+            const lowerName = sheetName.toLowerCase();
+            if(lowerName === "sumar" || lowerName === "stoc componente" || lowerName === "stoc" || lowerName === "inventory") return;
             const sheet = wb.Sheets[sheetName];
             const rows = XLSX.utils.sheet_to_json(sheet, {defval:""});
             parseRowsIntoBuildMap(rows, map, sheetName);
