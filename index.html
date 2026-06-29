@@ -155,6 +155,28 @@ input:focus, select:focus{
     background:#edf2ff;
     font-weight:bold;
 }
+.socket-pill{
+    padding:4px 8px;
+    border-radius:999px;
+    background:#e9eef6;
+    color:#344054;
+    font-size:12px;
+    font-weight:bold;
+    white-space:nowrap;
+}
+.compatibility-panel{
+    margin-bottom:14px;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:15px;
+    background:#f8fafc;
+    color:#344054;
+    font-size:14px;
+}
+.compatibility-panel strong{display:block;margin-bottom:4px;}
+.compatibility-panel.ok{background:#eaf8ef;border-color:#b7e4c7;color:#126734;}
+.compatibility-panel.bad{background:#fff1f0;border-color:#ffb8b1;color:#b42318;}
+.compatibility-panel.neutral{background:#f8fafc;border-color:var(--line);color:#344054;}
 .empty{
     color:var(--muted);
     text-align:center;
@@ -387,7 +409,7 @@ tbody tr:hover{background:#f8fbff;}
     <div class="header">
         <div>
             <h1>PC Builder</h1>
-            <p>Alegi componentele, salvezi fiecare configurație ca PC1, PC2 etc., apoi poți modifica, importa și exporta toate calculatoarele pe foi separate.</p>
+            <p>Alegi componentele, verifici compatibilitatea CPU/MB după socket, salvezi fiecare configurație ca PC1, PC2 etc., apoi poți importa și exporta toate calculatoarele pe foi separate.</p>
         </div>
         <span class="badge">Salvare automată în browser</span>
     </div>
@@ -403,7 +425,14 @@ tbody tr:hover{background:#f8fbff;}
 
                 <div class="search-wrap">
                     <label for="searchInput">Caută rapid modelul</label>
-                    <input id="searchInput" placeholder="ex: i5-8400, GTX 1060, B550, 16GB..." oninput="renderComponents()">
+                    <input id="searchInput" placeholder="ex: Xeon E5-2680 v4, i5-8400, X79, B550..." oninput="renderComponents()">
+                </div>
+
+                <div class="search-wrap" id="socketFilterWrap">
+                    <label for="socketFilter">Filtrează după socket</label>
+                    <select id="socketFilter" onchange="renderComponents()">
+                        <option value="">Toate socketurile</option>
+                    </select>
                 </div>
 
                 <div class="component-list" id="components"></div>
@@ -482,12 +511,18 @@ tbody tr:hover{background:#f8fbff;}
                     </div>
                 </div>
 
+                <div class="compatibility-panel neutral" id="compatibilityPanel">
+                    <strong>Compatibilitate CPU / MB</strong>
+                    Alege un procesor și o placă de bază pentru verificarea socketului.
+                </div>
+
                 <div class="table-wrap">
                     <table>
                         <thead>
                             <tr>
                                 <th>Categorie</th>
                                 <th>Componentă</th>
+                                <th>Socket</th>
                                 <th>Preț cumpărare</th>
                                 <th>Șterge</th>
                             </tr>
@@ -509,550 +544,145 @@ tbody tr:hover{background:#f8fbff;}
 </div>
 
 <script>
+const WS = (socket, items) => items.map(name => ({name, socket}));
+
 const DB = {
-CPU:     [
-        "i3-530",
-        "i3-540",
-        "i3-550",
-        "i3-560",
-        "i5-650",
-        "i5-660",
-        "i5-661",
-        "i5-670",
-        "i5-680",
-        "i5-750",
-        "i5-760",
-        "i7-860",
-        "i7-870",
-        "i7-875K",
-        "i7-880",
-        "i7-920",
-        "i7-930",
-        "i7-940",
-        "i7-950",
-        "i7-960",
-        "i7-965",
-        "i7-975",
-        "i7-980X",
-        "i7-990X",
-        "i3-2100",
-        "i3-2120",
-        "i3-2130",
-        "i5-2300",
-        "i5-2310",
-        "i5-2320",
-        "i5-2400",
-        "i5-2500",
-        "i5-2500K",
-        "i7-2600",
-        "i7-2600K",
-        "i7-2700K",
-        "i3-3220",
-        "i3-3240",
-        "i3-3250",
-        "i5-3330",
-        "i5-3340",
-        "i5-3450",
-        "i5-3470",
-        "i5-3570",
-        "i5-3570K",
-        "i7-3770",
-        "i7-3770K",
-        "i3-4130",
-        "i3-4150",
-        "i3-4160",
-        "i3-4170",
-        "i3-4330",
-        "i3-4340",
-        "i3-4350",
-        "i3-4360",
-        "i3-4370",
-        "i5-4430",
-        "i5-4440",
-        "i5-4460",
-        "i5-4570",
-        "i5-4590",
-        "i5-4670",
-        "i5-4670K",
-        "i5-4690",
-        "i5-4690K",
-        "i7-4770",
-        "i7-4770K",
-        "i7-4790",
-        "i7-4790K",
-        "i5-5675C",
-        "i7-5775C",
-        "i3-6100",
-        "i3-6300",
-        "i3-6320",
-        "i5-6400",
-        "i5-6500",
-        "i5-6600",
-        "i5-6600K",
-        "i7-6700",
-        "i7-6700K",
-        "i3-7100",
-        "i3-7300",
-        "i3-7320",
-        "i3-7350K",
-        "i5-7400",
-        "i5-7500",
-        "i5-7600",
-        "i5-7600K",
-        "i7-7700",
-        "i7-7700K",
-        "i3-8100",
-        "i3-8300",
-        "i3-8350K",
-        "i5-8400",
-        "i5-8500",
-        "i5-8600",
-        "i5-8600K",
-        "i7-8700",
-        "i7-8700K",
-        "i7-8086K",
-        "i3-9100",
-        "i3-9100F",
-        "i3-9300",
-        "i5-9400",
-        "i5-9400F",
-        "i5-9500",
-        "i5-9600",
-        "i5-9600K",
-        "i5-9600KF",
-        "i7-9700",
-        "i7-9700F",
-        "i7-9700K",
-        "i7-9700KF",
-        "i9-9900",
-        "i9-9900K",
-        "i9-9900KF",
-        "i9-9900KS",
-        "i3-10100",
-        "i3-10100F",
-        "i3-10300",
-        "i3-10320",
-        "i5-10400",
-        "i5-10400F",
-        "i5-10500",
-        "i5-10600",
-        "i5-10600K",
-        "i5-10600KF",
-        "i7-10700",
-        "i7-10700F",
-        "i7-10700K",
-        "i7-10700KF",
-        "i9-10850K",
-        "i9-10900",
-        "i9-10900F",
-        "i9-10900K",
-        "i9-10900KF",
-        "i5-11400",
-        "i5-11400F",
-        "i5-11500",
-        "i5-11600",
-        "i5-11600K",
-        "i5-11600KF",
-        "i7-11700",
-        "i7-11700F",
-        "i7-11700K",
-        "i7-11700KF",
-        "i9-11900",
-        "i9-11900F",
-        "i9-11900K",
-        "i9-11900KF",
-        "i3-12100",
-        "i3-12100F",
-        "i3-12300",
-        "i5-12400",
-        "i5-12400F",
-        "i5-12500",
-        "i5-12600",
-        "i5-12600K",
-        "i5-12600KF",
-        "i7-12700",
-        "i7-12700F",
-        "i7-12700K",
-        "i7-12700KF",
-        "i9-12900",
-        "i9-12900F",
-        "i9-12900K",
-        "i9-12900KF",
-        "i9-12900KS",
-        "i3-13100",
-        "i3-13100F",
-        "i5-13400",
-        "i5-13400F",
-        "i5-13500",
-        "i5-13600",
-        "i5-13600K",
-        "i5-13600KF",
-        "i7-13700",
-        "i7-13700F",
-        "i7-13700K",
-        "i7-13700KF",
-        "i9-13900",
-        "i9-13900F",
-        "i9-13900K",
-        "i9-13900KF",
-        "i9-13900KS",
-        "i3-14100",
-        "i3-14100F",
-        "i5-14400",
-        "i5-14400F",
-        "i5-14500",
-        "i5-14600",
-        "i5-14600K",
-        "i5-14600KF",
-        "i7-14700",
-        "i7-14700F",
-        "i7-14700K",
-        "i7-14700KF",
-        "i9-14900",
-        "i9-14900F",
-        "i9-14900K",
-        "i9-14900KF",
-        "i9-14900KS",
-        "Core Ultra 5 225",
-        "Core Ultra 5 225F",
-        "Core Ultra 5 235",
-        "Core Ultra 5 245",
-        "Core Ultra 5 245K",
-        "Core Ultra 5 245KF",
-        "Core Ultra 7 265",
-        "Core Ultra 7 265F",
-        "Core Ultra 7 265K",
-        "Core Ultra 7 265KF",
-        "Core Ultra 9 285K",
-        "Ryzen 3 1200",
-        "Ryzen 3 1300X",
-        "Ryzen 5 1400",
-        "Ryzen 5 1500X",
-        "Ryzen 5 1600",
-        "Ryzen 5 1600X",
-        "Ryzen 7 1700",
-        "Ryzen 7 1700X",
-        "Ryzen 7 1800X",
-        "Ryzen 3 2200G",
-        "Ryzen 3 2300X",
-        "Ryzen 5 2400G",
-        "Ryzen 5 2500X",
-        "Ryzen 5 2600",
-        "Ryzen 5 2600X",
-        "Ryzen 7 2700",
-        "Ryzen 7 2700X",
-        "Ryzen 3 3100",
-        "Ryzen 3 3200G",
-        "Ryzen 3 3300X",
-        "Ryzen 5 3400G",
-        "Ryzen 5 3500",
-        "Ryzen 5 3500X",
-        "Ryzen 5 3600",
-        "Ryzen 5 3600X",
-        "Ryzen 5 3600XT",
-        "Ryzen 7 3700X",
-        "Ryzen 7 3800X",
-        "Ryzen 7 3800XT",
-        "Ryzen 9 3900X",
-        "Ryzen 9 3900XT",
-        "Ryzen 9 3950X",
-        "Ryzen 3 4100",
-        "Ryzen 3 4300G",
-        "Ryzen 3 4350G",
-        "Ryzen 5 4500",
-        "Ryzen 5 4600G",
-        "Ryzen 5 4650G",
-        "Ryzen 7 4700G",
-        "Ryzen 7 4750G",
-        "Ryzen 3 5100",
-        "Ryzen 3 5300G",
-        "Ryzen 5 5500",
-        "Ryzen 5 5600",
-        "Ryzen 5 5600G",
-        "Ryzen 5 5600GT",
-        "Ryzen 5 5600X",
-        "Ryzen 5 5600X3D",
-        "Ryzen 7 5700",
-        "Ryzen 7 5700G",
-        "Ryzen 7 5700X",
-        "Ryzen 7 5700X3D",
-        "Ryzen 7 5800",
-        "Ryzen 7 5800X",
-        "Ryzen 7 5800X3D",
-        "Ryzen 9 5900X",
-        "Ryzen 9 5950X",
-        "Ryzen 5 7500F",
-        "Ryzen 5 7600",
-        "Ryzen 5 7600X",
-        "Ryzen 5 7600X3D",
-        "Ryzen 7 7700",
-        "Ryzen 7 7700X",
-        "Ryzen 7 7800X3D",
-        "Ryzen 9 7900",
-        "Ryzen 9 7900X",
-        "Ryzen 9 7900X3D",
-        "Ryzen 9 7950X",
-        "Ryzen 9 7950X3D",
-        "Ryzen 3 8300G",
-        "Ryzen 5 8500G",
-        "Ryzen 5 8600G",
-        "Ryzen 7 8700G",
-        "Ryzen 5 9600",
-        "Ryzen 5 9600X",
-        "Ryzen 7 9700X",
-        "Ryzen 7 9800X3D",
-        "Ryzen 9 9900X",
-        "Ryzen 9 9900X3D",
-        "Ryzen 9 9950X",
-        "Ryzen 9 9950X3D"
+CPU: [
+        ...WS("LGA1156", [
+            "i3-530", "i3-540", "i3-550", "i3-560",
+            "i5-650", "i5-660", "i5-661", "i5-670", "i5-680", "i5-750", "i5-760",
+            "i7-860", "i7-870", "i7-875K", "i7-880"
+        ]),
+        ...WS("LGA1366", [
+            "i7-920", "i7-930", "i7-940", "i7-950", "i7-960", "i7-965", "i7-975", "i7-980X", "i7-990X"
+        ]),
+        ...WS("LGA1155", [
+            "i3-2100", "i3-2120", "i3-2130",
+            "i5-2300", "i5-2310", "i5-2320", "i5-2400", "i5-2500", "i5-2500K",
+            "i7-2600", "i7-2600K", "i7-2700K",
+            "i3-3220", "i3-3240", "i3-3250",
+            "i5-3330", "i5-3340", "i5-3450", "i5-3470", "i5-3570", "i5-3570K",
+            "i7-3770", "i7-3770K"
+        ]),
+        ...WS("LGA2011", [
+            "i7-3820", "i7-3930K", "i7-3960X", "i7-3970X",
+            "i7-4820K", "i7-4930K", "i7-4960X",
+            "Xeon E5-1603", "Xeon E5-1607", "Xeon E5-1620", "Xeon E5-1650", "Xeon E5-1660",
+            "Xeon E5-1603 v2", "Xeon E5-1607 v2", "Xeon E5-1620 v2", "Xeon E5-1650 v2", "Xeon E5-1660 v2",
+            "Xeon E5-2603", "Xeon E5-2609", "Xeon E5-2620", "Xeon E5-2630", "Xeon E5-2630L", "Xeon E5-2637",
+            "Xeon E5-2640", "Xeon E5-2643", "Xeon E5-2650", "Xeon E5-2650L", "Xeon E5-2660", "Xeon E5-2665", "Xeon E5-2667",
+            "Xeon E5-2670", "Xeon E5-2680", "Xeon E5-2687W", "Xeon E5-2690",
+            "Xeon E5-2603 v2", "Xeon E5-2609 v2", "Xeon E5-2620 v2", "Xeon E5-2630 v2", "Xeon E5-2630L v2", "Xeon E5-2637 v2",
+            "Xeon E5-2640 v2", "Xeon E5-2643 v2", "Xeon E5-2650 v2", "Xeon E5-2650L v2", "Xeon E5-2660 v2", "Xeon E5-2667 v2",
+            "Xeon E5-2670 v2", "Xeon E5-2680 v2", "Xeon E5-2687W v2", "Xeon E5-2690 v2", "Xeon E5-2695 v2", "Xeon E5-2697 v2"
+        ]),
+        ...WS("LGA1150", [
+            "i3-4130", "i3-4150", "i3-4160", "i3-4170", "i3-4330", "i3-4340", "i3-4350", "i3-4360", "i3-4370",
+            "i5-4430", "i5-4440", "i5-4460", "i5-4570", "i5-4590", "i5-4670", "i5-4670K", "i5-4690", "i5-4690K",
+            "i7-4770", "i7-4770K", "i7-4790", "i7-4790K", "i5-5675C", "i7-5775C"
+        ]),
+        ...WS("LGA2011-v3", [
+            "i7-5820K", "i7-5930K", "i7-5960X", "i7-6800K", "i7-6850K", "i7-6900K", "i7-6950X",
+            "Xeon E5-1603 v3", "Xeon E5-1607 v3", "Xeon E5-1620 v3", "Xeon E5-1630 v3", "Xeon E5-1650 v3", "Xeon E5-1660 v3",
+            "Xeon E5-1603 v4", "Xeon E5-1607 v4", "Xeon E5-1620 v4", "Xeon E5-1630 v4", "Xeon E5-1650 v4", "Xeon E5-1660 v4",
+            "Xeon E5-2603 v3", "Xeon E5-2609 v3", "Xeon E5-2620 v3", "Xeon E5-2630 v3", "Xeon E5-2630L v3", "Xeon E5-2637 v3",
+            "Xeon E5-2640 v3", "Xeon E5-2643 v3", "Xeon E5-2650 v3", "Xeon E5-2650L v3", "Xeon E5-2660 v3", "Xeon E5-2667 v3",
+            "Xeon E5-2670 v3", "Xeon E5-2680 v3", "Xeon E5-2683 v3", "Xeon E5-2687W v3", "Xeon E5-2690 v3", "Xeon E5-2695 v3", "Xeon E5-2697 v3", "Xeon E5-2698 v3", "Xeon E5-2699 v3",
+            "Xeon E5-2603 v4", "Xeon E5-2609 v4", "Xeon E5-2620 v4", "Xeon E5-2630 v4", "Xeon E5-2630L v4", "Xeon E5-2637 v4",
+            "Xeon E5-2640 v4", "Xeon E5-2643 v4", "Xeon E5-2650 v4", "Xeon E5-2650L v4", "Xeon E5-2660 v4", "Xeon E5-2667 v4",
+            "Xeon E5-2680 v4", "Xeon E5-2683 v4", "Xeon E5-2687W v4", "Xeon E5-2690 v4", "Xeon E5-2695 v4", "Xeon E5-2697A v4", "Xeon E5-2697 v4", "Xeon E5-2698 v4", "Xeon E5-2699 v4"
+        ]),
+        ...WS("LGA1151", [
+            "i3-6100", "i3-6300", "i3-6320", "i5-6400", "i5-6500", "i5-6600", "i5-6600K", "i7-6700", "i7-6700K",
+            "i3-7100", "i3-7300", "i3-7320", "i3-7350K", "i5-7400", "i5-7500", "i5-7600", "i5-7600K", "i7-7700", "i7-7700K"
+        ]),
+        ...WS("LGA1151-v2", [
+            "i3-8100", "i3-8300", "i3-8350K", "i5-8400", "i5-8500", "i5-8600", "i5-8600K", "i7-8700", "i7-8700K", "i7-8086K",
+            "i3-9100", "i3-9100F", "i3-9300", "i5-9400", "i5-9400F", "i5-9500", "i5-9600", "i5-9600K", "i5-9600KF",
+            "i7-9700", "i7-9700F", "i7-9700K", "i7-9700KF", "i9-9900", "i9-9900K", "i9-9900KF", "i9-9900KS"
+        ]),
+        ...WS("LGA2066", [
+            "i5-7640X", "i7-7740X", "i7-7800X", "i7-7820X", "i9-7900X", "i9-7920X", "i9-7940X", "i9-7960X", "i9-7980XE",
+            "i7-9800X", "i9-9820X", "i9-9900X", "i9-9920X", "i9-9940X", "i9-9960X", "i9-9980XE",
+            "i9-10900X", "i9-10920X", "i9-10940X", "i9-10980XE",
+            "Xeon W-2123", "Xeon W-2133", "Xeon W-2135", "Xeon W-2145", "Xeon W-2155", "Xeon W-2175", "Xeon W-2195",
+            "Xeon W-2223", "Xeon W-2235", "Xeon W-2245", "Xeon W-2255", "Xeon W-2265", "Xeon W-2275", "Xeon W-2295"
+        ]),
+        ...WS("LGA1200", [
+            "i3-10100", "i3-10100F", "i3-10300", "i3-10320", "i5-10400", "i5-10400F", "i5-10500", "i5-10600", "i5-10600K", "i5-10600KF",
+            "i7-10700", "i7-10700F", "i7-10700K", "i7-10700KF", "i9-10850K", "i9-10900", "i9-10900F", "i9-10900K", "i9-10900KF",
+            "i5-11400", "i5-11400F", "i5-11500", "i5-11600", "i5-11600K", "i5-11600KF", "i7-11700", "i7-11700F", "i7-11700K", "i7-11700KF",
+            "i9-11900", "i9-11900F", "i9-11900K", "i9-11900KF"
+        ]),
+        ...WS("LGA1700", [
+            "i3-12100", "i3-12100F", "i3-12300", "i5-12400", "i5-12400F", "i5-12500", "i5-12600", "i5-12600K", "i5-12600KF",
+            "i7-12700", "i7-12700F", "i7-12700K", "i7-12700KF", "i9-12900", "i9-12900F", "i9-12900K", "i9-12900KF", "i9-12900KS",
+            "i3-13100", "i3-13100F", "i5-13400", "i5-13400F", "i5-13500", "i5-13600", "i5-13600K", "i5-13600KF",
+            "i7-13700", "i7-13700F", "i7-13700K", "i7-13700KF", "i9-13900", "i9-13900F", "i9-13900K", "i9-13900KF", "i9-13900KS",
+            "i3-14100", "i3-14100F", "i5-14400", "i5-14400F", "i5-14500", "i5-14600", "i5-14600K", "i5-14600KF",
+            "i7-14700", "i7-14700F", "i7-14700K", "i7-14700KF", "i9-14900", "i9-14900F", "i9-14900K", "i9-14900KF", "i9-14900KS"
+        ]),
+        ...WS("LGA1851", [
+            "Core Ultra 5 225", "Core Ultra 5 225F", "Core Ultra 5 235", "Core Ultra 5 245", "Core Ultra 5 245K", "Core Ultra 5 245KF",
+            "Core Ultra 7 265", "Core Ultra 7 265F", "Core Ultra 7 265K", "Core Ultra 7 265KF", "Core Ultra 9 285K"
+        ]),
+        ...WS("AM4", [
+            "Ryzen 3 1200", "Ryzen 3 1300X", "Ryzen 5 1400", "Ryzen 5 1500X", "Ryzen 5 1600", "Ryzen 5 1600X", "Ryzen 7 1700", "Ryzen 7 1700X", "Ryzen 7 1800X",
+            "Ryzen 3 2200G", "Ryzen 3 2300X", "Ryzen 5 2400G", "Ryzen 5 2500X", "Ryzen 5 2600", "Ryzen 5 2600X", "Ryzen 7 2700", "Ryzen 7 2700X",
+            "Ryzen 3 3100", "Ryzen 3 3200G", "Ryzen 3 3300X", "Ryzen 5 3400G", "Ryzen 5 3500", "Ryzen 5 3500X", "Ryzen 5 3600", "Ryzen 5 3600X", "Ryzen 5 3600XT", "Ryzen 7 3700X", "Ryzen 7 3800X", "Ryzen 7 3800XT", "Ryzen 9 3900X", "Ryzen 9 3900XT", "Ryzen 9 3950X",
+            "Ryzen 3 4100", "Ryzen 3 4300G", "Ryzen 3 4350G", "Ryzen 5 4500", "Ryzen 5 4600G", "Ryzen 5 4650G", "Ryzen 7 4700G", "Ryzen 7 4750G",
+            "Ryzen 3 5100", "Ryzen 3 5300G", "Ryzen 5 5500", "Ryzen 5 5600", "Ryzen 5 5600G", "Ryzen 5 5600GT", "Ryzen 5 5600X", "Ryzen 5 5600X3D", "Ryzen 7 5700", "Ryzen 7 5700G", "Ryzen 7 5700X", "Ryzen 7 5700X3D", "Ryzen 7 5800", "Ryzen 7 5800X", "Ryzen 7 5800X3D", "Ryzen 9 5900X", "Ryzen 9 5950X"
+        ]),
+        ...WS("AM5", [
+            "Ryzen 5 7500F", "Ryzen 5 7600", "Ryzen 5 7600X", "Ryzen 5 7600X3D", "Ryzen 7 7700", "Ryzen 7 7700X", "Ryzen 7 7800X3D", "Ryzen 9 7900", "Ryzen 9 7900X", "Ryzen 9 7900X3D", "Ryzen 9 7950X", "Ryzen 9 7950X3D",
+            "Ryzen 3 8300G", "Ryzen 5 8500G", "Ryzen 5 8600G", "Ryzen 7 8700G",
+            "Ryzen 5 9600", "Ryzen 5 9600X", "Ryzen 7 9700X", "Ryzen 7 9800X3D", "Ryzen 9 9900X", "Ryzen 9 9900X3D", "Ryzen 9 9950X", "Ryzen 9 9950X3D"
+        ]),
+        ...WS("TR4", ["Ryzen Threadripper 1900X", "Ryzen Threadripper 1920X", "Ryzen Threadripper 1950X", "Ryzen Threadripper 2920X", "Ryzen Threadripper 2950X", "Ryzen Threadripper 2970WX", "Ryzen Threadripper 2990WX"]),
+        ...WS("sTRX4", ["Ryzen Threadripper 3960X", "Ryzen Threadripper 3970X", "Ryzen Threadripper 3990X"]),
+        ...WS("sWRX8", ["Ryzen Threadripper PRO 3945WX", "Ryzen Threadripper PRO 3955WX", "Ryzen Threadripper PRO 3975WX", "Ryzen Threadripper PRO 3995WX", "Ryzen Threadripper PRO 5945WX", "Ryzen Threadripper PRO 5955WX", "Ryzen Threadripper PRO 5965WX", "Ryzen Threadripper PRO 5975WX", "Ryzen Threadripper PRO 5995WX"]),
+        ...WS("sTR5", ["Ryzen Threadripper 7960X", "Ryzen Threadripper 7970X", "Ryzen Threadripper 7980X", "Ryzen Threadripper PRO 7945WX", "Ryzen Threadripper PRO 7955WX", "Ryzen Threadripper PRO 7965WX", "Ryzen Threadripper PRO 7975WX", "Ryzen Threadripper PRO 7985WX", "Ryzen Threadripper PRO 7995WX"])
     ],
-GPU:     [
-        "GTX 750",
-        "GTX 750 Ti",
-        "GTX 760",
-        "GTX 770",
-        "GTX 780",
-        "GTX 780 Ti",
-        "GTX 950",
-        "GTX 960",
-        "GTX 970",
-        "GTX 980",
-        "GTX 980 Ti",
-        "GTX 1050",
-        "GTX 1050 Ti",
-        "GTX 1060 3GB",
-        "GTX 1060 6GB",
-        "GTX 1070",
-        "GTX 1070 Ti",
-        "GTX 1080",
-        "GTX 1080 Ti",
-        "GTX 1630",
-        "GTX 1650",
-        "GTX 1650 Super",
-        "GTX 1660",
-        "GTX 1660 Super",
-        "GTX 1660 Ti",
-        "RTX 2060",
-        "RTX 2060 Super",
-        "RTX 2070",
-        "RTX 2070 Super",
-        "RTX 2080",
-        "RTX 2080 Super",
-        "RTX 2080 Ti",
-        "RTX 3050",
-        "RTX 3060",
-        "RTX 3060 Ti",
-        "RTX 3070",
-        "RTX 3070 Ti",
-        "RTX 3080",
-        "RTX 3080 Ti",
-        "RTX 3090",
-        "RTX 3090 Ti",
-        "RTX 4060",
-        "RTX 4060 Ti",
-        "RTX 4070",
-        "RTX 4070 Super",
-        "RTX 4070 Ti",
-        "RTX 4070 Ti Super",
-        "RTX 4080",
-        "RTX 4080 Super",
-        "RTX 4090",
-        "RTX 5050",
-        "RTX 5060",
-        "RTX 5060 Ti",
-        "RTX 5070",
-        "RTX 5070 Ti",
-        "RTX 5080",
-        "RTX 5090",
-        "RX 450",
-        "RX 460",
-        "RX 470",
-        "RX 480",
-        "RX 550",
-        "RX 560",
-        "RX 570",
-        "RX 580",
-        "RX 590",
-        "RX 5300",
-        "RX 5500",
-        "RX 5500 XT",
-        "RX 5600 XT",
-        "RX 5700",
-        "RX 5700 XT",
-        "RX 6400",
-        "RX 6500 XT",
-        "RX 6600",
-        "RX 6600 XT",
-        "RX 6650 XT",
-        "RX 6700",
-        "RX 6700 XT",
-        "RX 6750 XT",
-        "RX 6800",
-        "RX 6800 XT",
-        "RX 6900 XT",
-        "RX 6950 XT",
-        "RX 7600",
-        "RX 7600 XT",
-        "RX 7700 XT",
-        "RX 7800 XT",
-        "RX 7900 GRE",
-        "RX 7900 XT",
-        "RX 7900 XTX",
-        "RX 9060 XT",
-        "RX 9070",
-        "RX 9070 XT"
+GPU: [
+        "GTX 750", "GTX 750 Ti", "GTX 760", "GTX 770", "GTX 780", "GTX 780 Ti",
+        "GTX 950", "GTX 960", "GTX 970", "GTX 980", "GTX 980 Ti",
+        "GTX 1050", "GTX 1050 Ti", "GTX 1060 3GB", "GTX 1060 6GB", "GTX 1070", "GTX 1070 Ti", "GTX 1080", "GTX 1080 Ti",
+        "GTX 1630", "GTX 1650", "GTX 1650 Super", "GTX 1660", "GTX 1660 Super", "GTX 1660 Ti",
+        "RTX 2060", "RTX 2060 Super", "RTX 2070", "RTX 2070 Super", "RTX 2080", "RTX 2080 Super", "RTX 2080 Ti",
+        "RTX 3050", "RTX 3060", "RTX 3060 Ti", "RTX 3070", "RTX 3070 Ti", "RTX 3080", "RTX 3080 Ti", "RTX 3090", "RTX 3090 Ti",
+        "RTX 4060", "RTX 4060 Ti", "RTX 4070", "RTX 4070 Super", "RTX 4070 Ti", "RTX 4070 Ti Super", "RTX 4080", "RTX 4080 Super", "RTX 4090",
+        "RTX 5050", "RTX 5060", "RTX 5060 Ti", "RTX 5070", "RTX 5070 Ti", "RTX 5080", "RTX 5090",
+        "RX 450", "RX 460", "RX 470", "RX 480", "RX 550", "RX 560", "RX 570", "RX 580", "RX 590",
+        "RX 5300", "RX 5500", "RX 5500 XT", "RX 5600 XT", "RX 5700", "RX 5700 XT",
+        "RX 6400", "RX 6500 XT", "RX 6600", "RX 6600 XT", "RX 6650 XT", "RX 6700", "RX 6700 XT", "RX 6750 XT", "RX 6800", "RX 6800 XT", "RX 6900 XT", "RX 6950 XT",
+        "RX 7600", "RX 7600 XT", "RX 7700 XT", "RX 7800 XT", "RX 7900 GRE", "RX 7900 XT", "RX 7900 XTX", "RX 9060 XT", "RX 9070", "RX 9070 XT"
     ],
-RAM:     [
-        "2GB DDR3",
-        "4GB DDR3",
-        "8GB DDR3",
-        "16GB DDR3",
-        "32GB DDR3",
-        "4GB DDR4",
-        "8GB DDR4",
-        "16GB DDR4",
-        "32GB DDR4",
-        "64GB DDR4",
-        "128GB DDR4",
-        "8GB DDR5",
-        "16GB DDR5",
-        "24GB DDR5",
-        "32GB DDR5",
-        "48GB DDR5",
-        "64GB DDR5",
-        "96GB DDR5",
-        "128GB DDR5"
+RAM: ["2GB DDR3", "4GB DDR3", "8GB DDR3", "16GB DDR3", "32GB DDR3", "4GB DDR4", "8GB DDR4", "16GB DDR4", "32GB DDR4", "64GB DDR4", "128GB DDR4", "8GB DDR5", "16GB DDR5", "24GB DDR5", "32GB DDR5", "48GB DDR5", "64GB DDR5", "96GB DDR5", "128GB DDR5"],
+SSD: ["120GB", "128GB", "240GB", "250GB", "256GB", "480GB", "500GB", "512GB", "1TB", "2TB", "4TB", "8TB"],
+HDD: ["250GB", "320GB", "500GB", "1TB", "2TB", "3TB", "4TB", "6TB", "8TB", "10TB", "12TB", "14TB", "16TB", "18TB", "20TB", "22TB"],
+PSU: ["300W", "350W", "400W", "450W", "500W", "550W", "600W", "650W", "700W", "750W", "800W", "850W", "900W", "1000W", "1200W", "1300W", "1500W", "1600W"],
+MB: [
+        ...WS("LGA1156", ["H55", "P55", "Q57"]),
+        ...WS("LGA1366", ["X58"]),
+        ...WS("LGA1155", ["H61", "H67", "P67", "Z68", "B75", "H77", "Z77"]),
+        ...WS("LGA2011", ["X79", "C602", "C604", "C606"]),
+        ...WS("LGA1150", ["H81", "B85", "H87", "Z87", "H97", "Z97"]),
+        ...WS("LGA2011-v3", ["X99", "C612"]),
+        ...WS("LGA1151", ["H110", "B150", "H170", "Z170", "B250", "H270", "Z270"]),
+        ...WS("LGA1151-v2", ["H310", "B360", "H370", "Z370", "Z390"]),
+        ...WS("LGA2066", ["X299", "C422"]),
+        ...WS("LGA1200", ["H410", "B460", "H470", "Z490", "H510", "B560", "H570", "Z590"]),
+        ...WS("LGA1700", ["H610", "B660", "H670", "Z690", "B760", "H770", "Z790"]),
+        ...WS("LGA1851", ["H810", "B860", "Z890"]),
+        ...WS("AM4", ["A320", "B350", "X370", "B450", "X470", "A520", "B550", "X570"]),
+        ...WS("AM5", ["A620", "B650", "B650E", "X670", "X670E", "B840", "B850", "X870", "X870E"]),
+        ...WS("TR4", ["X399"]),
+        ...WS("sTRX4", ["TRX40"]),
+        ...WS("sWRX8", ["WRX80"]),
+        ...WS("sTR5", ["TRX50", "WRX90"])
     ],
-SSD:     [
-        "120GB",
-        "128GB",
-        "240GB",
-        "250GB",
-        "256GB",
-        "480GB",
-        "500GB",
-        "512GB",
-        "1TB",
-        "2TB",
-        "4TB",
-        "8TB"
-    ],
-HDD:     [
-        "250GB",
-        "320GB",
-        "500GB",
-        "1TB",
-        "2TB",
-        "3TB",
-        "4TB",
-        "6TB",
-        "8TB",
-        "10TB",
-        "12TB",
-        "14TB",
-        "16TB",
-        "18TB",
-        "20TB",
-        "22TB"
-    ],
-PSU:     [
-        "300W",
-        "350W",
-        "400W",
-        "450W",
-        "500W",
-        "550W",
-        "600W",
-        "650W",
-        "700W",
-        "750W",
-        "800W",
-        "850W",
-        "900W",
-        "1000W",
-        "1200W",
-        "1300W",
-        "1500W",
-        "1600W"
-    ],
-MB:     [
-        "H55",
-        "P55",
-        "X58",
-        "H61",
-        "P67",
-        "Z68",
-        "B75",
-        "H77",
-        "Z77",
-        "H81",
-        "B85",
-        "H87",
-        "Z87",
-        "H97",
-        "Z97",
-        "H110",
-        "B150",
-        "H170",
-        "Z170",
-        "B250",
-        "H270",
-        "Z270",
-        "H310",
-        "B360",
-        "H370",
-        "Z370",
-        "Z390",
-        "H410",
-        "B460",
-        "H470",
-        "Z490",
-        "H510",
-        "B560",
-        "H570",
-        "Z590",
-        "H610",
-        "B660",
-        "H670",
-        "Z690",
-        "B760",
-        "H770",
-        "Z790",
-        "H810",
-        "B860",
-        "Z890",
-        "X299",
-        "A320",
-        "B350",
-        "X370",
-        "B450",
-        "X470",
-        "A520",
-        "B550",
-        "X570",
-        "A620",
-        "B650",
-        "B650E",
-        "X670",
-        "X670E",
-        "B840",
-        "B850",
-        "X870",
-        "X870E",
-        "X399",
-        "TRX40",
-        "WRX80",
-        "TRX50"
-    ],
-CASE:     [
-        "ATX Case",
-        "Mini Case"
-    ],
-COOLER:     [
-        "Stock",
-        "Air Cooler",
-        "Water Cooler"
-    ]
+CASE: ["ATX Case", "Mini Case"],
+COOLER: ["Stock", "Air Cooler", "Water Cooler"]
 };
 
 const LEGACY_COMPONENTS_KEY = "pc_builder_components_v3";
@@ -1072,6 +702,7 @@ function normalizeComponents(items){
     return items.map(x=>({
         cat:x.cat || x.category || x["Categorie"] || "",
         name:x.name || x.component || x["Componentă"] || x["Componenta"] || "",
+        socket:x.socket || x["Socket"] || "",
         price:Number(x.price ?? x.buyPrice ?? x["Preț cumpărare lei"] ?? x["Pret cumparare lei"] ?? 0) || 0
     })).filter(x=>x.cat && x.name);
 }
@@ -1150,6 +781,24 @@ function escapeHTML(value){
     }[ch]));
 }
 
+function componentName(item){
+    return typeof item === "string" ? item : (item.name || "");
+}
+
+function componentSocket(item){
+    return typeof item === "object" && item ? (item.socket || "") : "";
+}
+
+function componentLabel(item){
+    const name = componentName(item);
+    const socket = componentSocket(item);
+    return socket ? `${name} ${socket}` : name;
+}
+
+function selectedMatches(item){
+    return selectedComp && selectedComp.name === componentName(item) && (selectedComp.socket || "") === componentSocket(item);
+}
+
 function getBuildTotal(build){
     return normalizeComponents(build.components).reduce((sum,item)=>sum + (Number(item.price) || 0), 0);
 }
@@ -1210,6 +859,7 @@ function init(){
     }
 
     renderCategories();
+    renderSocketFilter();
     renderComponents();
     render();
     renderSavedBuilds();
@@ -1238,13 +888,31 @@ function showCategory(cat){
     document.getElementById("searchInput").value = "";
     updateSelectedText();
     renderCategories();
+    renderSocketFilter();
     renderComponents();
+}
+
+function renderSocketFilter(){
+    const wrap = document.getElementById("socketFilterWrap");
+    const select = document.getElementById("socketFilter");
+    if(!wrap || !select) return;
+
+    const sockets = Array.from(new Set((DB[selectedCat] || []).map(componentSocket).filter(Boolean))).sort((a,b)=>a.localeCompare(b, "ro"));
+    const current = select.value;
+    select.innerHTML = '<option value="">Toate socketurile</option>' + sockets.map(socket=>`<option value="${escapeHTML(socket)}">${escapeHTML(socket)}</option>`).join("");
+    select.value = sockets.includes(current) ? current : "";
+    wrap.style.display = sockets.length ? "block" : "none";
 }
 
 function renderComponents(){
     const holder = document.getElementById("components");
     const query = document.getElementById("searchInput").value.trim().toLowerCase();
-    const items = (DB[selectedCat] || []).filter(name => name.toLowerCase().includes(query));
+    const socketFilter = document.getElementById("socketFilter") ? document.getElementById("socketFilter").value : "";
+    const items = (DB[selectedCat] || []).filter(item => {
+        const label = componentLabel(item).toLowerCase();
+        const socket = componentSocket(item);
+        return label.includes(query) && (!socketFilter || socket === socketFilter);
+    });
     document.getElementById("activeCategoryBadge").textContent = selectedCat;
     holder.innerHTML = "";
 
@@ -1253,17 +921,19 @@ function renderComponents(){
         return;
     }
 
-    items.forEach(name=>{
+    items.forEach(item=>{
+        const name = componentName(item);
+        const socket = componentSocket(item);
         const btn = document.createElement("button");
-        btn.className = "component-item" + (name === selectedComp ? " active" : "");
-        btn.innerHTML = `<span>${escapeHTML(name)}</span><span>+</span>`;
-        btn.onclick = () => selectComponent(name);
+        btn.className = "component-item" + (selectedMatches(item) ? " active" : "");
+        btn.innerHTML = `<span>${escapeHTML(name)}</span>${socket ? `<span class="socket-pill">${escapeHTML(socket)}</span>` : '<span>+</span>'}`;
+        btn.onclick = () => selectComponent(item);
         holder.appendChild(btn);
     });
 }
 
-function selectComponent(name){
-    selectedComp = name;
+function selectComponent(item){
+    selectedComp = {name:componentName(item), socket:componentSocket(item)};
     updateSelectedText();
     renderComponents();
     document.getElementById("buyPrice").focus();
@@ -1275,7 +945,8 @@ function updateSelectedText(){
         box.textContent = "Nu este selectată nicio componentă.";
         return;
     }
-    box.innerHTML = `<strong>${escapeHTML(selectedCat)}</strong> - ${escapeHTML(selectedComp)}`;
+    const socketText = selectedComp.socket ? ` <span class="socket-pill">${escapeHTML(selectedComp.socket)}</span>` : "";
+    box.innerHTML = `<strong>${escapeHTML(selectedCat)}</strong> - ${escapeHTML(selectedComp.name)}${socketText}`;
 }
 
 function clearSelection(){
@@ -1297,7 +968,7 @@ function addComponent(){
         return;
     }
 
-    data.push({cat:selectedCat, name:selectedComp, price});
+    data.push({cat:selectedCat, name:selectedComp.name, socket:selectedComp.socket || "", price});
     save();
     document.getElementById("buyPrice").value = "";
     render();
@@ -1441,13 +1112,14 @@ function render(){
     list.innerHTML = "";
 
     if(data.length === 0){
-        list.innerHTML = '<tr><td colspan="4" class="table-empty">Nu ai adăugat încă nicio componentă.</td></tr>';
+        list.innerHTML = '<tr><td colspan="5" class="table-empty">Nu ai adăugat încă nicio componentă.</td></tr>';
     }else{
         data.forEach((item,index)=>{
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${escapeHTML(item.cat)}</td>
                 <td>${escapeHTML(item.name)}</td>
+                <td>${item.socket ? `<span class="socket-pill">${escapeHTML(item.socket)}</span>` : "-"}</td>
                 <td><input class="price-input" type="number" min="0" step="1" value="${Number(item.price) || 0}" oninput="updatePrice(${index}, this.value)"> lei</td>
                 <td><button class="del-btn" onclick="deleteComponent(${index})">X</button></td>
             `;
@@ -1474,6 +1146,39 @@ function renderTotalsOnly(){
     profitCard.classList.remove("positive","negative");
     if(profit > 0) profitCard.classList.add("positive");
     if(profit < 0) profitCard.classList.add("negative");
+    renderCompatibility();
+}
+
+function renderCompatibility(){
+    const panel = document.getElementById("compatibilityPanel");
+    if(!panel) return;
+
+    const cpus = data.filter(x => x.cat === "CPU");
+    const boards = data.filter(x => x.cat === "MB");
+    const cpu = cpus[0];
+    const mb = boards[0];
+
+    panel.classList.remove("ok", "bad", "neutral");
+
+    if(!cpu || !mb){
+        panel.classList.add("neutral");
+        panel.innerHTML = `<strong>Compatibilitate CPU / MB</strong>Alege CPU și MB pentru verificarea socketului.`;
+        return;
+    }
+
+    if(!cpu.socket || !mb.socket){
+        panel.classList.add("neutral");
+        panel.innerHTML = `<strong>Compatibilitate CPU / MB</strong>Nu există socket salvat pentru una dintre componente. Realege CPU/MB din listă pentru verificare.`;
+        return;
+    }
+
+    if(cpu.socket === mb.socket){
+        panel.classList.add("ok");
+        panel.innerHTML = `<strong>Compatibilitate CPU / MB</strong>Compatibil: ${escapeHTML(cpu.name)} (${escapeHTML(cpu.socket)}) se potrivește cu chipsetul ${escapeHTML(mb.name)} (${escapeHTML(mb.socket)}).`;
+    }else{
+        panel.classList.add("bad");
+        panel.innerHTML = `<strong>Compatibilitate CPU / MB</strong>Incompatibil: CPU este ${escapeHTML(cpu.socket)}, iar placa de bază este ${escapeHTML(mb.socket)}.`;
+    }
 }
 
 function getBuildsForExport(){
@@ -1525,6 +1230,7 @@ function createBuildSheetRows(build){
             "Nr componentă": "",
             "Categorie": "",
             "Componentă": "",
+            "Socket": "",
             "Preț cumpărare lei": "",
             "Cost total lei": totalBuy,
             "Preț vânzare PC lei": sale,
@@ -1540,6 +1246,7 @@ function createBuildSheetRows(build){
             "Nr componentă": componentIndex + 1,
             "Categorie": item.cat,
             "Componentă": item.name,
+            "Socket": item.socket || "",
             "Preț cumpărare lei": Number(item.price) || 0,
             "Cost total lei": componentIndex === 0 ? totalBuy : "",
             "Preț vânzare PC lei": componentIndex === 0 ? sale : "",
@@ -1678,9 +1385,10 @@ function parseRowsIntoBuildMap(rows, map, fallbackName){
         }
         const cat = String(row["Categorie"] || "").trim();
         const component = String(row["Componentă"] || row["Componenta"] || "").trim();
+        const socket = String(row["Socket"] || "").trim();
         const price = Number(row["Preț cumpărare lei"] || row["Pret cumparare lei"] || row["Preț"] || row["Pret"] || 0);
         if(cat && component){
-            build.components.push({cat, name:component, price:Number.isFinite(price) ? price : 0});
+            build.components.push({cat, name:component, socket, price:Number.isFinite(price) ? price : 0});
         }
     });
 }
