@@ -263,7 +263,7 @@ input:focus, select:focus{
     display:flex;
     gap:7px;
     flex-wrap:wrap;
-    margin-bottom:5px;
+    margin-top:7px;
 }
 .quick-margin button{
     border:1px solid #dec36d;
@@ -612,11 +612,12 @@ tbody tr:hover{background:#f8fbff;}
                 <div class="component-list" id="components"></div>
 
                 <div class="add-box">
+                    <label>Componentă selectată</label>
                     <div class="selected-name" id="selectedName">Nu este selectată nicio componentă.</div>
 
                     <div class="form-row">
                         <div>
-                            <label for="buyPrice">Preț cumpărare</label>
+                            <label for="buyPrice">Preț cumpărare componentă</label>
                             <input id="buyPrice" type="number" min="0" step="1" placeholder="lei">
                         </div>
                         <button class="btn btn-primary" onclick="addComponent()">Adaugă</button>
@@ -644,22 +645,22 @@ tbody tr:hover{background:#f8fbff;}
                     <div class="active-pc-line">PC activ: <b id="activePcLabel">Nesalvat</b></div>
                     <div class="pc-list" id="pcList"></div>
                     <div class="pc-list-actions">
-                        <button class="btn btn-secondary btn-small" onclick="newDraft()">PC nou</button>
-                        <button class="btn btn-primary btn-small" onclick="addCurrentAsPC()">Adaugă PC</button>
+                        <button class="btn btn-secondary btn-small" onclick="newDraft()">PC nou gol</button>
+                        <button class="btn btn-primary btn-small" onclick="addCurrentAsPC()">Adaugă configurația ca PC nou</button>
                     </div>
                 </div>
 
                 <div class="summary-grid">
                     <div class="stat">
-                        <div class="label">Cost componente</div>
+                        <div class="label">Cost total automat</div>
                         <div class="value"><span id="totalBuy">0</span> lei</div>
                     </div>
                     <div class="stat">
-                        <div class="label">Preț vânzare</div>
+                        <div class="label">Preț vânzare PC</div>
                         <div class="value"><span id="saleDisplay">0</span> lei</div>
                     </div>
                     <div class="stat profit" id="profitCard">
-                        <div class="label">Profit</div>
+                        <div class="label">Profit total</div>
                         <div class="value"><span id="profitDisplay">0</span> lei</div>
                     </div>
                     <div class="stat">
@@ -670,9 +671,11 @@ tbody tr:hover{background:#f8fbff;}
 
                 <div class="sell-panel">
                     <div>
+                        <label for="salePrice">Introdu prețul de vânzare doar după ce ai completat componentele</label>
                         <input id="salePrice" type="number" min="0" step="1" placeholder="Preț vânzare total PC, lei" oninput="saveSalePrice(); render()">
                     </div>
                     <div>
+                        <label>Setare rapidă după profit</label>
                         <div class="quick-margin">
                             <button type="button" onclick="setMargin(10)">+10%</button>
                             <button type="button" onclick="setMargin(15)">+15%</button>
@@ -684,6 +687,7 @@ tbody tr:hover{background:#f8fbff;}
 
                 <div class="compatibility-panel neutral" id="compatibilityPanel">
                     <strong>Compatibilitate CPU / MB</strong>
+                    Alege un procesor și o placă de bază pentru verificarea socketului.
                 </div>
 
                 <div class="table-wrap">
@@ -702,8 +706,8 @@ tbody tr:hover{background:#f8fbff;}
                 </div>
 
                 <div class="footer-actions">
-                    <button class="btn btn-primary" onclick="addCurrentAsPC()">Adaugă</button>
-                    <button class="btn btn-blue" onclick="exportExcel()">Export</button>
+                    <button class="btn btn-primary" onclick="addCurrentAsPC()">Adaugă în listă</button>
+                    <button class="btn btn-blue" onclick="exportExcel()">Export toate PC pe foi</button>
                     <button class="btn btn-secondary" onclick="openImport()">Import</button>
                     <button class="btn btn-secondary" onclick="printBuild()">Print / PDF</button>
                     <input id="importFile" class="hidden-file" type="file" accept=".xlsx,.xls,.json" onchange="importFile(event)">
@@ -714,21 +718,21 @@ tbody tr:hover{background:#f8fbff;}
 
     <section class="card chart-card">
         <div class="card-title">
-            <h2>3. Graficul calculatoarelor</h2>
+            <h2>3. Grafic pe lista calculatoarelor</h2>
             <span class="badge" id="chartCount">0 PC-uri</span>
         </div>
         <div class="panel-body">
             <div class="chart-summary" id="chartTotals">
                 <div class="chart-total">
-                    <div class="label">Cost total</div>
+                    <div class="label">Cost total calculatoare</div>
                     <div class="value">0 lei</div>
                 </div>
                 <div class="chart-total">
-                    <div class="label">Vânzare</div>
+                    <div class="label">Vânzare totală</div>
                     <div class="value">0 lei</div>
                 </div>
                 <div class="chart-total profit">
-                    <div class="label">Profit</div>
+                    <div class="label">Profit total</div>
                     <div class="value">0 lei</div>
                 </div>
             </div>
@@ -762,6 +766,7 @@ tbody tr:hover{background:#f8fbff;}
                     <label for="inventoryName">Componentă</label>
                     <input id="inventoryName" list="inventoryComponentOptions" placeholder="Alege sau scrie componenta...">
                     <datalist id="inventoryComponentOptions"></datalist>
+                    <small class="field-hint">Lista se schimbă automat după categoria selectată.</small>
                 </div>
                 <div>
                     <label for="inventoryPrice">Preț bucata</label>
@@ -784,7 +789,7 @@ tbody tr:hover{background:#f8fbff;}
                     <div class="value">0</div>
                 </div>
                 <div class="inventory-stat">
-                    <div class="label">Valoare totală</div>
+                    <div class="label">Valoare totală stoc</div>
                     <div class="value">0 lei</div>
                 </div>
             </div>
@@ -911,7 +916,17 @@ CPU: [
         ...WS("TR4", ["Ryzen Threadripper 1900X", "Ryzen Threadripper 1920X", "Ryzen Threadripper 1950X", "Ryzen Threadripper 2920X", "Ryzen Threadripper 2950X", "Ryzen Threadripper 2970WX", "Ryzen Threadripper 2990WX"]),
         ...WS("sTRX4", ["Ryzen Threadripper 3960X", "Ryzen Threadripper 3970X", "Ryzen Threadripper 3990X"]),
         ...WS("sWRX8", ["Ryzen Threadripper PRO 3945WX", "Ryzen Threadripper PRO 3955WX", "Ryzen Threadripper PRO 3975WX", "Ryzen Threadripper PRO 3995WX", "Ryzen Threadripper PRO 5945WX", "Ryzen Threadripper PRO 5955WX", "Ryzen Threadripper PRO 5965WX", "Ryzen Threadripper PRO 5975WX", "Ryzen Threadripper PRO 5995WX"]),
-        ...WS("sTR5", ["Ryzen Threadripper 7960X", "Ryzen Threadripper 7970X", "Ryzen Threadripper 7980X", "Ryzen Threadripper PRO 7945WX", "Ryzen Threadripper PRO 7955WX", "Ryzen Threadripper PRO 7965WX", "Ryzen Threadripper PRO 7975WX", "Ryzen Threadripper PRO 7985WX", "Ryzen Threadripper PRO 7995WX"])
+        ...WS("sTR5", ["Ryzen Threadripper 7960X", "Ryzen Threadripper 7970X", "Ryzen Threadripper 7980X", "Ryzen Threadripper PRO 7945WX", "Ryzen Threadripper PRO 7955WX", "Ryzen Threadripper PRO 7965WX", "Ryzen Threadripper PRO 7975WX", "Ryzen Threadripper PRO 7985WX", "Ryzen Threadripper PRO 7995WX"]),
+        ...WS("LGA1156", ["i3-530T", "i3-540T", "i5-750S", "i7-860S"]),
+        ...WS("LGA1155", ["i3-2100T", "i3-2120T", "i3-3220T", "i3-3240T", "i5-2390T", "i5-2400S", "i5-2400T", "i5-2500S", "i5-2500T", "i5-3330S", "i5-3335S", "i5-3340S", "i5-3450S", "i5-3470S", "i5-3470T", "i5-3570S", "i5-3570T", "i7-2600S", "i7-3770S", "i7-3770T"]),
+        ...WS("LGA1150", ["i3-4130T", "i3-4150T", "i3-4160T", "i3-4170T", "i3-4330T", "i3-4350T", "i3-4360T", "i5-4430S", "i5-4440S", "i5-4460S", "i5-4460T", "i5-4570S", "i5-4570T", "i5-4590S", "i5-4590T", "i5-4670S", "i5-4670T", "i5-4690S", "i5-4690T", "i7-4770S", "i7-4770T", "i7-4790S", "i7-4790T"]),
+        ...WS("LGA1151", ["i3-6100T", "i3-6300T", "i3-6320T", "i3-7100T", "i3-7300T", "i3-7320T", "i5-6400T", "i5-6500T", "i5-6600T", "i5-7400T", "i5-7500T", "i5-7600T", "i7-6700T", "i7-7700T"]),
+        ...WS("LGA1151-v2", ["i3-8100T", "i3-8300T", "i3-9100T", "i3-9300T", "i3-9350K", "i3-9350KF", "i5-8400T", "i5-8500T", "i5-8600T", "i5-9400T", "i5-9500T", "i5-9500F", "i5-9600T", "i7-8700T", "i7-9700T", "i9-9900T"]),
+        ...WS("LGA1200", ["i3-10100T", "i3-10300T", "i3-10320T", "i5-10400T", "i5-10500T", "i5-10600T", "i5-11400T", "i5-11500T", "i5-11600T", "i7-10700T", "i7-11700T", "i9-10900T", "i9-11900T"]),
+        ...WS("LGA1700", ["i3-12100T", "i3-12300T", "i3-13100T", "i3-14100T", "i5-12400T", "i5-12490F", "i5-12500T", "i5-12600T", "i5-13400T", "i5-13490F", "i5-13500T", "i5-13600T", "i5-14400T", "i5-14490F", "i5-14500T", "i5-14600T", "i7-12700T", "i7-13700T", "i7-13790F", "i7-14700T", "i9-12900T", "i9-13900T", "i9-14900T"]),
+        ...WS("LGA1851", ["Core Ultra 5 225T", "Core Ultra 5 245T", "Core Ultra 7 265T", "Core Ultra 9 285T"]),
+        ...WS("AM4", ["Ryzen 5 1600 AF", "Ryzen 3 2200GE", "Ryzen 5 2400GE", "Ryzen 5 2600E", "Ryzen 7 2700E", "Ryzen 3 3200GE", "Ryzen 5 3400GE", "Ryzen 3 4300GE", "Ryzen 5 4600GE", "Ryzen 5 4650GE", "Ryzen 7 4700GE", "Ryzen 7 4750GE", "Ryzen 3 5300GE", "Ryzen 5 5500GT", "Ryzen 5 5600GE", "Ryzen 7 5700GE", "Ryzen 7 5800XT", "Ryzen 9 5900XT"]),
+        ...WS("AM5", ["Ryzen 5 7400F", "Ryzen 5 8400F", "Ryzen 7 8700F"])
     ],
 GPU: [
         "GTX 750", "GTX 750 Ti", "GTX 760", "GTX 770", "GTX 780", "GTX 780 Ti",
@@ -976,7 +991,7 @@ function normalizeComponents(items){
         cat:x.cat || x.category || x["Categorie"] || "",
         name:x.name || x.component || x["Componentă"] || x["Componenta"] || "",
         socket:x.socket || x["Socket"] || "",
-        price:Number(x.price ?? x.buyPrice ?? x["Preț cumpărare"] ?? x["Pret cumparare"] ?? 0) || 0
+        price:Number(x.price ?? x.buyPrice ?? x["Preț cumpărare lei"] ?? x["Pret cumparare lei"] ?? 0) || 0
     })).filter(x=>x.cat && x.name);
 }
 
@@ -1020,7 +1035,7 @@ function normalizeInventory(items){
     return items.map(x=>({
         cat:String(x.cat || x.category || x["Categorie"] || "").trim(),
         name:String(x.name || x.component || x["Componentă"] || x["Componenta"] || "").trim(),
-        price:Number(x.price ?? x.buyPrice ?? x["Preț bucata"] ?? x["Pret bucata"] ?? x["Preț"] ?? x["Pret"] ?? 0) || 0,
+        price:Number(x.price ?? x.buyPrice ?? x["Preț bucata lei"] ?? x["Pret bucata lei"] ?? x["Preț"] ?? x["Pret"] ?? 0) || 0,
         qty:Math.max(0, Number(x.qty ?? x.quantity ?? x["Cantitate"] ?? 0) || 0)
     })).filter(x=>x.cat && x.name);
 }
@@ -1490,15 +1505,15 @@ function updateChartTotals(chartData){
     count.textContent = chartData.length === 1 ? "1 PC" : `${chartData.length} PC-uri`;
     holder.innerHTML = `
         <div class="chart-total">
-            <div class="label">Investiții</div>
+            <div class="label">Cost total calculatoare</div>
             <div class="value">${formatMoney(totalCost)} lei</div>
         </div>
         <div class="chart-total">
-            <div class="label">Vânzare</div>
+            <div class="label">Vânzare totală</div>
             <div class="value">${formatMoney(totalSale)} lei</div>
         </div>
         <div class="chart-total profit ${totalProfit > 0 ? "positive" : totalProfit < 0 ? "negative" : ""}">
-            <div class="label">Profit</div>
+            <div class="label">Profit total</div>
             <div class="value">${formatMoney(totalProfit)} lei</div>
         </div>
     `;
@@ -1835,11 +1850,11 @@ function renderInventoryTotals(){
             <div class="value">${formatMoney(positions)}</div>
         </div>
         <div class="inventory-stat">
-            <div class="label">Cantitate</div>
+            <div class="label">Cantitate totală</div>
             <div class="value">${formatMoney(totalQty)}</div>
         </div>
         <div class="inventory-stat">
-            <div class="label">Valoare</div>
+            <div class="label">Valoare totală stoc</div>
             <div class="value">${formatMoney(totalValue)} lei</div>
         </div>
     `;
