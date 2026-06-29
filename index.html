@@ -297,8 +297,76 @@ tbody tr:hover{background:#f8fbff;}
     display:flex;
     gap:10px;
     justify-content:flex-end;
+    flex-wrap:wrap;
     margin-top:14px;
 }
+.footer-actions .btn{min-width:130px;}
+.pc-manager{
+    margin-bottom:16px;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:15px;
+    background:#f8fafc;
+}
+.pc-manager-head{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center;
+    margin-bottom:10px;
+}
+.pc-manager-head h3{
+    margin:0;
+    font-size:16px;
+}
+.pc-list{
+    display:grid;
+    gap:8px;
+}
+.pc-row{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:10px;
+    align-items:center;
+    padding:10px;
+    border:1px solid #dbe4ef;
+    border-radius:13px;
+    background:#fff;
+}
+.pc-row.active{
+    border-color:var(--primary);
+    background:#eef4ff;
+}
+.pc-info{min-width:0;}
+.pc-name-input{
+    padding:8px 9px;
+    font-size:14px;
+    font-weight:bold;
+    margin-bottom:5px;
+}
+.pc-meta{
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.35;
+}
+.pc-actions{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+}
+.pc-list-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+}
+.active-pc-line{
+    margin-bottom:12px;
+    color:#344054;
+    font-size:13px;
+}
+.hidden-file{display:none;}
 @media(max-width:980px){
     .layout{grid-template-columns:1fr;}
     .summary-grid{grid-template-columns:repeat(2,1fr);}
@@ -308,7 +376,9 @@ tbody tr:hover{background:#f8fbff;}
     .header{display:block;}
     .categories{grid-template-columns:repeat(2,1fr);}
     .form-row,.sell-panel,.summary-grid{grid-template-columns:1fr;}
-    .actions,.footer-actions{grid-template-columns:1fr;display:grid;}
+    .actions,.footer-actions,.pc-row{grid-template-columns:1fr;display:grid;}
+    .pc-actions{justify-content:stretch;}
+    .pc-actions .btn{width:100%;}
 }
 </style>
 </head>
@@ -317,7 +387,7 @@ tbody tr:hover{background:#f8fbff;}
     <div class="header">
         <div>
             <h1>PC Builder</h1>
-            <p>Alegi componentele, introduci doar prețul de cumpărare, iar prețul de vânzare se pune la final pentru tot PC-ul.</p>
+            <p>Alegi componentele, salvezi fiecare configurație ca PC1, PC2 etc., apoi poți modifica, importa și exporta toate calculatoarele pe foi separate.</p>
         </div>
         <span class="badge">Salvare automată în browser</span>
     </div>
@@ -364,6 +434,19 @@ tbody tr:hover{background:#f8fbff;}
                 <span class="badge" id="itemsCount">0 componente</span>
             </div>
             <div class="panel-body">
+                <div class="pc-manager">
+                    <div class="pc-manager-head">
+                        <h3>Lista calculatoarelor</h3>
+                        <span class="badge" id="savedCount">0 PC-uri</span>
+                    </div>
+                    <div class="active-pc-line">PC activ: <b id="activePcLabel">Nesalvat</b></div>
+                    <div class="pc-list" id="pcList"></div>
+                    <div class="pc-list-actions">
+                        <button class="btn btn-secondary btn-small" onclick="newDraft()">PC nou gol</button>
+                        <button class="btn btn-primary btn-small" onclick="addCurrentAsPC()">Adaugă configurația ca PC nou</button>
+                    </div>
+                </div>
+
                 <div class="summary-grid">
                     <div class="stat">
                         <div class="label">Cost total automat</div>
@@ -414,8 +497,11 @@ tbody tr:hover{background:#f8fbff;}
                 </div>
 
                 <div class="footer-actions">
-                    <button class="btn btn-blue" onclick="exportExcel()">Export Excel</button>
+                    <button class="btn btn-primary" onclick="addCurrentAsPC()">Adaugă în listă</button>
+                    <button class="btn btn-blue" onclick="exportExcel()">Export toate PC pe foi</button>
+                    <button class="btn btn-secondary" onclick="openImport()">Import</button>
                     <button class="btn btn-secondary" onclick="printBuild()">Print / PDF</button>
+                    <input id="importFile" class="hidden-file" type="file" accept=".xlsx,.xls,.json" onchange="importFile(event)">
                 </div>
             </div>
         </section>
@@ -969,18 +1055,31 @@ COOLER:     [
     ]
 };
 
-const STORAGE_KEY = "pc_builder_components_v3";
-const OLD_KEYS = ["pc"];
-const SALE_KEY = "pc_builder_sale_price_v3";
+const LEGACY_COMPONENTS_KEY = "pc_builder_components_v3";
+const LEGACY_OLD_KEYS = ["pc"];
+const LEGACY_SALE_KEY = "pc_builder_sale_price_v3";
+const BUILDS_KEY = "pc_builder_saved_builds_v4";
+const ACTIVE_BUILD_KEY = "pc_builder_active_build_v4";
 
-let data = loadData();
+let builds = loadBuilds();
+let activeBuildId = localStorage.getItem(ACTIVE_BUILD_KEY) || null;
+let data = [];
 let selectedCat = "CPU";
 let selectedComp = null;
 
-function loadData(){
-    let saved = localStorage.getItem(STORAGE_KEY);
+function normalizeComponents(items){
+    if(!Array.isArray(items)) return [];
+    return items.map(x=>({
+        cat:x.cat || x.category || x["Categorie"] || "",
+        name:x.name || x.component || x["Componentă"] || x["Componenta"] || "",
+        price:Number(x.price ?? x.buyPrice ?? x["Preț cumpărare lei"] ?? x["Pret cumparare lei"] ?? 0) || 0
+    })).filter(x=>x.cat && x.name);
+}
+
+function loadLegacyData(){
+    let saved = localStorage.getItem(LEGACY_COMPONENTS_KEY);
     if(!saved){
-        for(const key of OLD_KEYS){
+        for(const key of LEGACY_OLD_KEYS){
             if(localStorage.getItem(key)){
                 saved = localStorage.getItem(key);
                 break;
@@ -988,14 +1087,52 @@ function loadData(){
         }
     }
     try{
-        return (JSON.parse(saved) || []).map(x=>({
-            cat:x.cat || x.category || "",
-            name:x.name || "",
-            price:Number(x.price) || 0
-        })).filter(x=>x.cat && x.name);
+        return normalizeComponents(JSON.parse(saved) || []);
     }catch(e){
         return [];
     }
+}
+
+function loadBuilds(){
+    try{
+        const saved = JSON.parse(localStorage.getItem(BUILDS_KEY) || "[]");
+        if(!Array.isArray(saved)) return [];
+        return saved.map((b,index)=>({
+            id:b.id || makeId(),
+            name:b.name || `PC${index + 1}`,
+            components:normalizeComponents(b.components || b.data || []),
+            salePrice:Number(b.salePrice) || 0,
+            createdAt:b.createdAt || new Date().toISOString(),
+            updatedAt:b.updatedAt || b.createdAt || new Date().toISOString()
+        }));
+    }catch(e){
+        return [];
+    }
+}
+
+function makeId(){
+    return "pc_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
+}
+
+function getNextPCName(){
+    let max = 0;
+    builds.forEach(b=>{
+        const match = String(b.name || "").trim().match(/^PC\s*(\d+)$/i);
+        if(match) max = Math.max(max, Number(match[1]) || 0);
+    });
+    return "PC" + (max + 1);
+}
+
+function createBuild(name, components, salePrice){
+    const now = new Date().toISOString();
+    return {
+        id:makeId(),
+        name:name || getNextPCName(),
+        components:normalizeComponents(components),
+        salePrice:Number(salePrice) || 0,
+        createdAt:now,
+        updatedAt:now
+    };
 }
 
 function formatMoney(value){
@@ -1013,22 +1150,71 @@ function escapeHTML(value){
     }[ch]));
 }
 
+function getBuildTotal(build){
+    return normalizeComponents(build.components).reduce((sum,item)=>sum + (Number(item.price) || 0), 0);
+}
+
+function getBuildById(id){
+    return builds.find(b=>b.id === id) || null;
+}
+
+function persistBuilds(){
+    localStorage.setItem(BUILDS_KEY, JSON.stringify(builds));
+    if(activeBuildId){
+        localStorage.setItem(ACTIVE_BUILD_KEY, activeBuildId);
+    }else{
+        localStorage.removeItem(ACTIVE_BUILD_KEY);
+    }
+}
+
 function save(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(LEGACY_COMPONENTS_KEY, JSON.stringify(data));
+    autosaveActiveBuild();
 }
 
 function saveSalePrice(){
-    localStorage.setItem(SALE_KEY, document.getElementById("salePrice").value || "");
+    localStorage.setItem(LEGACY_SALE_KEY, document.getElementById("salePrice").value || "");
+    autosaveActiveBuild();
+}
+
+function autosaveActiveBuild(){
+    if(!activeBuildId) return;
+    const build = getBuildById(activeBuildId);
+    if(!build) return;
+    build.components = normalizeComponents(data);
+    build.salePrice = getSalePrice();
+    build.updatedAt = new Date().toISOString();
+    persistBuilds();
+    renderSavedBuilds();
+    updateActivePcLabel();
+}
+
+function applyBuildToCurrent(build){
+    data = normalizeComponents(build.components);
+    document.getElementById("salePrice").value = Number(build.salePrice) || "";
+    localStorage.setItem(LEGACY_COMPONENTS_KEY, JSON.stringify(data));
+    localStorage.setItem(LEGACY_SALE_KEY, document.getElementById("salePrice").value || "");
 }
 
 function init(){
-    const savedSale = localStorage.getItem(SALE_KEY);
-    if(savedSale !== null){
-        document.getElementById("salePrice").value = savedSale;
+    const activeBuild = getBuildById(activeBuildId);
+    if(activeBuild){
+        applyBuildToCurrent(activeBuild);
+    }else{
+        activeBuildId = null;
+        data = loadLegacyData();
+        const savedSale = localStorage.getItem(LEGACY_SALE_KEY);
+        if(savedSale !== null){
+            document.getElementById("salePrice").value = savedSale;
+        }
     }
+
     renderCategories();
     renderComponents();
     render();
+    renderSavedBuilds();
+    updateActivePcLabel();
+
     document.getElementById("buyPrice").addEventListener("keydown", function(e){
         if(e.key === "Enter") addComponent();
     });
@@ -1149,6 +1335,107 @@ function setMargin(percent){
     render();
 }
 
+function addCurrentAsPC(){
+    if(data.length === 0 && getSalePrice() <= 0){
+        alert("Adaugă cel puțin o componentă sau un preț de vânzare înainte de salvare.");
+        return;
+    }
+    const build = createBuild(getNextPCName(), data, getSalePrice());
+    builds.push(build);
+    activeBuildId = build.id;
+    persistBuilds();
+    render();
+}
+
+function loadSavedPC(id){
+    const build = getBuildById(id);
+    if(!build) return;
+    activeBuildId = id;
+    applyBuildToCurrent(build);
+    clearSelection();
+    persistBuilds();
+    render();
+}
+
+function renameBuild(id, value){
+    const build = getBuildById(id);
+    if(!build) return;
+    build.name = value.trim() || "PC fără nume";
+    build.updatedAt = new Date().toISOString();
+    persistBuilds();
+    updateActivePcLabel();
+}
+
+function deleteBuild(id){
+    const build = getBuildById(id);
+    if(!build) return;
+    if(!confirm(`Ștergi ${build.name}?`)) return;
+    builds = builds.filter(b=>b.id !== id);
+    if(activeBuildId === id){
+        activeBuildId = null;
+        data = [];
+        document.getElementById("salePrice").value = "";
+        saveSalePrice();
+        clearSelection();
+    }
+    persistBuilds();
+    render();
+}
+
+function newDraft(){
+    if((data.length > 0 || getSalePrice() > 0) && !confirm("Deschizi un PC nou gol? Datele nesalvate în listă nu vor fi păstrate.")){
+        return;
+    }
+    activeBuildId = null;
+    data = [];
+    document.getElementById("salePrice").value = "";
+    localStorage.setItem(LEGACY_COMPONENTS_KEY, JSON.stringify(data));
+    localStorage.setItem(LEGACY_SALE_KEY, "");
+    clearSelection();
+    persistBuilds();
+    render();
+}
+
+function updateActivePcLabel(){
+    const label = document.getElementById("activePcLabel");
+    const build = getBuildById(activeBuildId);
+    label.textContent = build ? build.name : "Nesalvat";
+}
+
+function renderSavedBuilds(){
+    const holder = document.getElementById("pcList");
+    const count = document.getElementById("savedCount");
+    if(!holder || !count) return;
+    count.textContent = builds.length === 1 ? "1 PC" : `${builds.length} PC-uri`;
+    holder.innerHTML = "";
+
+    if(builds.length === 0){
+        holder.innerHTML = '<div class="empty">Lista este goală. Apasă „Adaugă în listă” pentru PC1.</div>';
+        updateActivePcLabel();
+        return;
+    }
+
+    builds.forEach(build=>{
+        const total = getBuildTotal(build);
+        const sale = Number(build.salePrice) || 0;
+        const profit = sale - total;
+        const row = document.createElement("div");
+        row.className = "pc-row" + (build.id === activeBuildId ? " active" : "");
+        row.innerHTML = `
+            <div class="pc-info">
+                <input class="pc-name-input" value="${escapeHTML(build.name)}" oninput="renameBuild('${build.id}', this.value)">
+                <div class="pc-meta">${build.components.length} componente · Cost ${formatMoney(total)} lei · Vânzare ${formatMoney(sale)} lei · Profit ${formatMoney(profit)} lei</div>
+            </div>
+            <div class="pc-actions">
+                <button class="btn btn-blue btn-small" onclick="loadSavedPC('${build.id}')">Deschide</button>
+                <button class="btn btn-red btn-small" onclick="deleteBuild('${build.id}')">Șterge</button>
+            </div>
+        `;
+        holder.appendChild(row);
+    });
+    updateActivePcLabel();
+}
+
 function render(){
     const list = document.getElementById("list");
     list.innerHTML = "";
@@ -1169,6 +1456,7 @@ function render(){
     }
     document.getElementById("itemsCount").textContent = data.length === 1 ? "1 componentă" : `${data.length} componente`;
     renderTotalsOnly();
+    renderSavedBuilds();
 }
 
 function renderTotalsOnly(){
@@ -1188,26 +1476,244 @@ function renderTotalsOnly(){
     if(profit < 0) profitCard.classList.add("negative");
 }
 
-function exportExcel(){
-    const totalBuy = getTotalBuy();
-    const sale = getSalePrice();
+function getBuildsForExport(){
+    if(builds.length > 0){
+        return builds.map(b=>({
+            ...b,
+            components:normalizeComponents(b.components),
+            salePrice:Number(b.salePrice) || 0
+        }));
+    }
+
+    if(data.length > 0 || getSalePrice() > 0){
+        return [createBuild("PC1", data, getSalePrice())];
+    }
+
+    return [];
+}
+
+function safeSheetName(name, usedNames){
+    let base = String(name || "PC")
+        .replace(/[\\/?*:[\]]/g, "-")
+        .trim();
+
+    if(!base) base = "PC";
+    base = base.substring(0, 31);
+
+    let candidate = base;
+    let nr = 2;
+    while(usedNames.has(candidate)){
+        const suffix = ` ${nr}`;
+        candidate = base.substring(0, 31 - suffix.length) + suffix;
+        nr++;
+    }
+    usedNames.add(candidate);
+    return candidate;
+}
+
+function createBuildSheetRows(build){
+    const totalBuy = getBuildTotal(build);
+    const sale = Number(build.salePrice) || 0;
     const profit = sale - totalBuy;
+    const margin = totalBuy > 0 ? (profit / totalBuy) * 100 : 0;
 
-    const rows = data.map(item=>({
-        "Categorie": item.cat,
-        "Componentă": item.name,
-        "Preț cumpărare lei": Number(item.price) || 0
-    }));
+    const rows = [];
 
-    rows.push({});
-    rows.push({"Categorie":"TOTAL COST", "Preț cumpărare lei": totalBuy});
-    rows.push({"Categorie":"PREȚ VÂNZARE PC", "Preț cumpărare lei": sale});
-    rows.push({"Categorie":"PROFIT", "Preț cumpărare lei": profit});
+    if(build.components.length === 0){
+        rows.push({
+            "Nume PC": build.name,
+            "Nr componentă": "",
+            "Categorie": "",
+            "Componentă": "",
+            "Preț cumpărare lei": "",
+            "Cost total lei": totalBuy,
+            "Preț vânzare PC lei": sale,
+            "Profit lei": profit,
+            "Adaos %": Number.isFinite(margin) ? Number(margin.toFixed(1)) : 0
+        });
+        return rows;
+    }
 
-    const ws = XLSX.utils.json_to_sheet(rows);
+    build.components.forEach((item,componentIndex)=>{
+        rows.push({
+            "Nume PC": build.name,
+            "Nr componentă": componentIndex + 1,
+            "Categorie": item.cat,
+            "Componentă": item.name,
+            "Preț cumpărare lei": Number(item.price) || 0,
+            "Cost total lei": componentIndex === 0 ? totalBuy : "",
+            "Preț vânzare PC lei": componentIndex === 0 ? sale : "",
+            "Profit lei": componentIndex === 0 ? profit : "",
+            "Adaos %": componentIndex === 0 && Number.isFinite(margin) ? Number(margin.toFixed(1)) : ""
+        });
+    });
+
+    return rows;
+}
+
+function exportExcel(){
+    if(typeof XLSX === "undefined"){
+        alert("Biblioteca pentru Excel nu s-a încărcat. Verifică internetul și reîncearcă.");
+        return;
+    }
+
+    const exportBuilds = getBuildsForExport();
+    if(exportBuilds.length === 0){
+        alert("Nu există calculatoare pentru export.");
+        return;
+    }
+
+    const usedSheetNames = new Set();
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "PC Build");
-    XLSX.writeFile(wb, "pc_build.xlsx");
+    const summarySheetName = safeSheetName("Sumar", usedSheetNames);
+    const pcSheetNames = exportBuilds.map((build,index)=>safeSheetName(build.name || `PC${index + 1}`, usedSheetNames));
+
+    const summaryRows = exportBuilds.map((build,index)=>{
+        const totalBuy = getBuildTotal(build);
+        const sale = Number(build.salePrice) || 0;
+        const profit = sale - totalBuy;
+        const margin = totalBuy > 0 ? (profit / totalBuy) * 100 : 0;
+
+        return {
+            "Nr": index + 1,
+            "Nume PC": build.name,
+            "Foaie Excel": pcSheetNames[index],
+            "Număr componente": build.components.length,
+            "Cost total lei": totalBuy,
+            "Preț vânzare PC lei": sale,
+            "Profit lei": profit,
+            "Adaos %": Number.isFinite(margin) ? Number(margin.toFixed(1)) : 0
+        };
+    });
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), summarySheetName);
+
+    exportBuilds.forEach((build,index)=>{
+        const rows = createBuildSheetRows(build);
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), pcSheetNames[index]);
+    });
+
+    XLSX.writeFile(wb, "toate_calculatoarele_pc_pe_foi.xlsx");
+}
+
+function openImport(){
+    document.getElementById("importFile").click();
+}
+
+function importFile(event){
+    const file = event.target.files && event.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+        try{
+            let imported = [];
+            if(file.name.toLowerCase().endsWith(".json")){
+                imported = parseImportedJSON(e.target.result);
+            }else{
+                if(typeof XLSX === "undefined"){
+                    alert("Biblioteca pentru Excel nu s-a încărcat. Verifică internetul și reîncearcă.");
+                    return;
+                }
+                imported = parseImportedWorkbook(e.target.result);
+            }
+
+            if(imported.length === 0){
+                alert("Fișierul nu conține calculatoare valide pentru import.");
+                return;
+            }
+
+            const replace = confirm("OK = înlocuiește lista actuală. Cancel = adaugă PC-urile importate la lista existentă.");
+            if(replace){
+                builds = imported;
+            }else{
+                builds = builds.concat(imported.map(b=>({
+                    ...b,
+                    name:uniqueImportedName(b.name)
+                })));
+            }
+
+            activeBuildId = builds[0] ? builds[0].id : null;
+            if(activeBuildId){
+                applyBuildToCurrent(builds[0]);
+            }else{
+                data = [];
+                document.getElementById("salePrice").value = "";
+            }
+            persistBuilds();
+            clearSelection();
+            render();
+            alert("Import realizat cu succes.");
+        }catch(err){
+            alert("Nu am putut importa fișierul. Verifică dacă este exportat din acest program.");
+            console.error(err);
+        }finally{
+            event.target.value = "";
+        }
+    };
+
+    if(file.name.toLowerCase().endsWith(".json")){
+        reader.readAsText(file);
+    }else{
+        reader.readAsArrayBuffer(file);
+    }
+}
+
+function parseImportedJSON(text){
+    const parsed = JSON.parse(text);
+    const rawBuilds = Array.isArray(parsed) ? parsed : (parsed.builds || []);
+    return rawBuilds.map((b,index)=>createBuild(b.name || `PC${index + 1}`, b.components || b.data || [], b.salePrice || 0));
+}
+
+function parseRowsIntoBuildMap(rows, map, fallbackName){
+    rows.forEach(row=>{
+        const pcName = String(row["Nume PC"] || row["PC"] || row["Calculator"] || fallbackName || "PC importat").trim() || "PC importat";
+        if(!map.has(pcName)){
+            map.set(pcName, {name:pcName, components:[], salePrice:0});
+        }
+        const build = map.get(pcName);
+        const sale = Number(row["Preț vânzare PC lei"] || row["Pret vanzare PC lei"] || row["Preț vânzare lei"] || 0);
+        if(Number.isFinite(sale) && sale > 0){
+            build.salePrice = sale;
+        }
+        const cat = String(row["Categorie"] || "").trim();
+        const component = String(row["Componentă"] || row["Componenta"] || "").trim();
+        const price = Number(row["Preț cumpărare lei"] || row["Pret cumparare lei"] || row["Preț"] || row["Pret"] || 0);
+        if(cat && component){
+            build.components.push({cat, name:component, price:Number.isFinite(price) ? price : 0});
+        }
+    });
+}
+
+function parseImportedWorkbook(buffer){
+    const wb = XLSX.read(buffer, {type:"array"});
+    const map = new Map();
+
+    if(wb.Sheets["Calculatoare"]){
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets["Calculatoare"], {defval:""});
+        parseRowsIntoBuildMap(rows, map, "PC importat");
+    }else{
+        wb.SheetNames.forEach(sheetName=>{
+            if(sheetName.toLowerCase() === "sumar") return;
+            const sheet = wb.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, {defval:""});
+            parseRowsIntoBuildMap(rows, map, sheetName);
+        });
+    }
+
+    return Array.from(map.values()).map((b,index)=>createBuild(b.name || `PC${index + 1}`, b.components, b.salePrice));
+}
+
+function uniqueImportedName(name){
+    let base = name || "PC importat";
+    let candidate = base;
+    let nr = 2;
+    const existing = new Set(builds.map(b=>b.name));
+    while(existing.has(candidate)){
+        candidate = `${base} (${nr})`;
+        nr++;
+    }
+    return candidate;
 }
 
 function printBuild(){
@@ -1215,10 +1721,10 @@ function printBuild(){
 }
 
 function resetAll(){
-    if(confirm("Ștergi toate componentele și prețul de vânzare?")){
+    if(confirm("Ștergi PC-ul curent? Lista de calculatoare salvate rămâne. Pentru a șterge un PC salvat, folosește butonul Șterge din listă.")){
         data = [];
-        save();
         document.getElementById("salePrice").value = "";
+        save();
         saveSalePrice();
         clearSelection();
         render();
