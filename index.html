@@ -389,15 +389,80 @@ tbody tr:hover{background:#f8fbff;}
     font-size:13px;
 }
 .hidden-file{display:none;}
+
+.chart-card{
+    margin-top:18px;
+}
+.chart-summary{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:14px;
+}
+.chart-total{
+    padding:13px 14px;
+    border-radius:15px;
+    background:#f8fafc;
+    border:1px solid var(--line);
+}
+.chart-total .label{
+    color:var(--muted);
+    font-size:12px;
+    margin-bottom:6px;
+}
+.chart-total .value{
+    font-size:22px;
+    font-weight:bold;
+}
+.chart-total.profit.positive{background:var(--green-light);border-color:#b7e4c7;}
+.chart-total.profit.negative{background:#fff1f0;border-color:#ffb8b1;}
+.chart-wrap{
+    width:100%;
+    overflow:auto;
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:#fff;
+    padding:12px;
+}
+#pcChart{
+    display:block;
+    width:100%;
+    min-width:720px;
+}
+.chart-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:12px;
+    color:#344054;
+    font-size:13px;
+}
+.legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-weight:bold;
+}
+.legend-dot{
+    width:12px;
+    height:12px;
+    border-radius:4px;
+    display:inline-block;
+}
+.legend-cost{background:#2363eb;}
+.legend-sale{background:#0ea5e9;}
+.legend-profit{background:#159447;}
+.legend-loss{background:#d92d20;}
+
 @media(max-width:980px){
     .layout{grid-template-columns:1fr;}
-    .summary-grid{grid-template-columns:repeat(2,1fr);}
+    .summary-grid,.chart-summary{grid-template-columns:repeat(2,1fr);}
 }
 @media(max-width:620px){
     .app{padding:10px;}
     .header{display:block;}
     .categories{grid-template-columns:repeat(2,1fr);}
-    .form-row,.sell-panel,.summary-grid{grid-template-columns:1fr;}
+    .form-row,.sell-panel,.summary-grid,.chart-summary{grid-template-columns:1fr;}
     .actions,.footer-actions,.pc-row{grid-template-columns:1fr;display:grid;}
     .pc-actions{justify-content:stretch;}
     .pc-actions .btn{width:100%;}
@@ -541,6 +606,41 @@ tbody tr:hover{background:#f8fbff;}
             </div>
         </section>
     </div>
+
+    <section class="card chart-card">
+        <div class="card-title">
+            <h2>3. Grafic pe lista calculatoarelor</h2>
+            <span class="badge" id="chartCount">0 PC-uri</span>
+        </div>
+        <div class="panel-body">
+            <div class="chart-summary" id="chartTotals">
+                <div class="chart-total">
+                    <div class="label">Cost total calculatoare</div>
+                    <div class="value">0 lei</div>
+                </div>
+                <div class="chart-total">
+                    <div class="label">Vânzare totală</div>
+                    <div class="value">0 lei</div>
+                </div>
+                <div class="chart-total profit">
+                    <div class="label">Profit total</div>
+                    <div class="value">0 lei</div>
+                </div>
+            </div>
+
+            <div class="chart-wrap">
+                <canvas id="pcChart" height="360"></canvas>
+            </div>
+
+            <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot legend-cost"></span>Cost</span>
+                <span class="legend-item"><span class="legend-dot legend-sale"></span>Vânzare</span>
+                <span class="legend-item"><span class="legend-dot legend-profit"></span>Profit</span>
+                <span class="legend-item"><span class="legend-dot legend-loss"></span>Pierdere</span>
+            </div>
+        </div>
+    </section>
+
 </div>
 
 <script>
@@ -835,6 +935,7 @@ function autosaveActiveBuild(){
     build.updatedAt = new Date().toISOString();
     persistBuilds();
     renderSavedBuilds();
+    renderChart();
     updateActivePcLabel();
 }
 
@@ -863,6 +964,7 @@ function init(){
     renderComponents();
     render();
     renderSavedBuilds();
+    renderChart();
     updateActivePcLabel();
 
     document.getElementById("buyPrice").addEventListener("keydown", function(e){
@@ -1035,6 +1137,7 @@ function renameBuild(id, value){
     build.updatedAt = new Date().toISOString();
     persistBuilds();
     updateActivePcLabel();
+    renderChart();
 }
 
 function deleteBuild(id){
@@ -1107,6 +1210,191 @@ function renderSavedBuilds(){
     updateActivePcLabel();
 }
 
+
+function shortenChartLabel(text, maxLength = 24){
+    const value = String(text || "PC");
+    return value.length > maxLength ? value.slice(0, maxLength - 1) + "…" : value;
+}
+
+function updateChartTotals(chartData){
+    const holder = document.getElementById("chartTotals");
+    const count = document.getElementById("chartCount");
+    if(!holder || !count) return;
+
+    const totalCost = chartData.reduce((sum,item)=>sum + item.cost, 0);
+    const totalSale = chartData.reduce((sum,item)=>sum + item.sale, 0);
+    const totalProfit = chartData.reduce((sum,item)=>sum + item.profit, 0);
+
+    count.textContent = chartData.length === 1 ? "1 PC" : `${chartData.length} PC-uri`;
+    holder.innerHTML = `
+        <div class="chart-total">
+            <div class="label">Cost total calculatoare</div>
+            <div class="value">${formatMoney(totalCost)} lei</div>
+        </div>
+        <div class="chart-total">
+            <div class="label">Vânzare totală</div>
+            <div class="value">${formatMoney(totalSale)} lei</div>
+        </div>
+        <div class="chart-total profit ${totalProfit > 0 ? "positive" : totalProfit < 0 ? "negative" : ""}">
+            <div class="label">Profit total</div>
+            <div class="value">${formatMoney(totalProfit)} lei</div>
+        </div>
+    `;
+}
+
+function renderChart(){
+    const canvas = document.getElementById("pcChart");
+    if(!canvas) return;
+
+    const chartData = builds.map(build=>{
+        const cost = getBuildTotal(build);
+        const sale = Number(build.salePrice) || 0;
+        return {
+            name: build.name || "PC",
+            cost,
+            sale,
+            profit: sale - cost
+        };
+    });
+
+    updateChartTotals(chartData);
+
+    const ctx = canvas.getContext("2d");
+    const wrapper = canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = Math.max(720, wrapper.clientWidth - 24);
+    const rowHeight = 78;
+    const cssHeight = chartData.length ? Math.max(340, 110 + chartData.length * rowHeight) : 300;
+
+    canvas.style.width = cssWidth + "px";
+    canvas.style.height = cssHeight + "px";
+    canvas.width = Math.round(cssWidth * dpr);
+    canvas.height = Math.round(cssHeight * dpr);
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, cssWidth, cssHeight);
+
+    if(chartData.length === 0){
+        ctx.fillStyle = "#667085";
+        ctx.font = "bold 17px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Nu există calculatoare salvate în listă.", cssWidth / 2, cssHeight / 2 - 8);
+        ctx.font = "14px Arial";
+        ctx.fillText("Apasă «Adaugă în listă», apoi graficul se va completa automat.", cssWidth / 2, cssHeight / 2 + 18);
+        return;
+    }
+
+    const left = 175;
+    const right = 34;
+    const top = 42;
+    const bottom = 42;
+    const chartWidth = cssWidth - left - right;
+    const values = chartData.flatMap(item => [item.cost, item.sale, item.profit]);
+    let minValue = Math.min(0, ...values);
+    let maxValue = Math.max(1, ...values);
+    const rangePadding = Math.max(100, (maxValue - minValue) * 0.08);
+    minValue -= rangePadding;
+    maxValue += rangePadding;
+
+    function xPos(value){
+        return left + ((value - minValue) / (maxValue - minValue)) * chartWidth;
+    }
+
+    const zeroX = xPos(0);
+    const ticks = 5;
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+
+    for(let i = 0; i <= ticks; i++){
+        const value = minValue + (maxValue - minValue) * (i / ticks);
+        const x = xPos(value);
+        ctx.strokeStyle = "#edf1f6";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, top - 8);
+        ctx.lineTo(x, cssHeight - bottom + 8);
+        ctx.stroke();
+
+        ctx.fillStyle = "#667085";
+        ctx.fillText(formatMoney(Math.round(value)), x, cssHeight - bottom + 16);
+    }
+
+    ctx.strokeStyle = "#98a2b3";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(zeroX, top - 8);
+    ctx.lineTo(zeroX, cssHeight - bottom + 8);
+    ctx.stroke();
+
+    chartData.forEach((item,index)=>{
+        const baseY = top + index * rowHeight + 20;
+        const bars = [
+            {label:"Cost", value:item.cost, color:"#2363eb", offset:-16},
+            {label:"Vânzare", value:item.sale, color:"#0ea5e9", offset:0},
+            {label:"Profit", value:item.profit, color:item.profit < 0 ? "#d92d20" : "#159447", offset:16}
+        ];
+
+        ctx.fillStyle = "#172033";
+        ctx.font = "bold 13px Arial";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText(shortenChartLabel(item.name), left - 14, baseY);
+
+        ctx.fillStyle = "#667085";
+        ctx.font = "11px Arial";
+        ctx.fillText(`${formatMoney(item.cost)} / ${formatMoney(item.sale)} / ${formatMoney(item.profit)} lei`, left - 14, baseY + 18);
+
+        bars.forEach(bar=>{
+            const y = baseY + bar.offset;
+            const barX = xPos(Math.min(0, bar.value));
+            const barEnd = xPos(Math.max(0, bar.value));
+            const width = Math.max(2, barEnd - barX);
+
+            ctx.fillStyle = bar.color;
+            ctx.beginPath();
+            const radius = 5;
+            const height = 11;
+            const x = barX;
+            const w = width;
+            const h = height;
+            ctx.moveTo(x + radius, y - h / 2);
+            ctx.lineTo(x + w - radius, y - h / 2);
+            ctx.quadraticCurveTo(x + w, y - h / 2, x + w, y - h / 2 + radius);
+            ctx.lineTo(x + w, y + h / 2 - radius);
+            ctx.quadraticCurveTo(x + w, y + h / 2, x + w - radius, y + h / 2);
+            ctx.lineTo(x + radius, y + h / 2);
+            ctx.quadraticCurveTo(x, y + h / 2, x, y + h / 2 - radius);
+            ctx.lineTo(x, y - h / 2 + radius);
+            ctx.quadraticCurveTo(x, y - h / 2, x + radius, y - h / 2);
+            ctx.fill();
+
+            if(Math.abs(bar.value) > 0){
+                ctx.fillStyle = "#344054";
+                ctx.font = "11px Arial";
+                ctx.textAlign = bar.value >= 0 ? "left" : "right";
+                ctx.textBaseline = "middle";
+                const labelX = bar.value >= 0 ? barEnd + 5 : barX - 5;
+                ctx.fillText(formatMoney(bar.value), labelX, y);
+            }
+        });
+    });
+
+    ctx.fillStyle = "#344054";
+    ctx.font = "bold 13px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText("Lei", left + chartWidth / 2, cssHeight - 4);
+}
+
+window.addEventListener("resize", function(){
+    clearTimeout(window.__pcChartResizeTimer);
+    window.__pcChartResizeTimer = setTimeout(renderChart, 150);
+});
+
 function render(){
     const list = document.getElementById("list");
     list.innerHTML = "";
@@ -1129,6 +1417,7 @@ function render(){
     document.getElementById("itemsCount").textContent = data.length === 1 ? "1 componentă" : `${data.length} componente`;
     renderTotalsOnly();
     renderSavedBuilds();
+    renderChart();
 }
 
 function renderTotalsOnly(){
