@@ -5177,9 +5177,28 @@ init();
             const cat = readText(row, ["Categorie", "Categoria"]);
             const component = readText(row, ["Componentă", "Componenta"]);
             const socket = readText(row, ["Socket"]);
-            const price = readNumber(row["Preț cumpărare lei"] || row["Pret cumparare lei"] || row["Preț/buc."] || row["Pret/buc."] || row["Preț"] || row["Pret"] || 0);
+            const qty = Math.max(1, Math.floor(readNumber(row["Cantitate"] || row["Cant."] || row["Qty"] || 1)) || 1);
+            let price = readNumber(
+                row["Preț bucata lei"] ||
+                row["Pret bucata lei"] ||
+                row["Preț cumpărare bucata lei"] ||
+                row["Pret cumparare bucata lei"] ||
+                row["Preț cumpărare lei"] ||
+                row["Pret cumparare lei"] ||
+                row["Preț/buc."] ||
+                row["Pret/buc."] ||
+                row["Preț buc."] ||
+                row["Pret buc."] ||
+                row["Preț"] ||
+                row["Pret"] ||
+                0
+            );
+            const lineTotal = readNumber(row["Total linie lei"] || row["Total lei"] || row["Investit total lei"] || 0);
+            if(!price && lineTotal && qty){
+                price = lineTotal / qty;
+            }
             if(cat && component){
-                build.components.push({cat, name:component, socket: categoryUsesSocket(cat) ? socket : "", price});
+                build.components.push({cat, name:component, socket: categoryUsesSocket(cat) ? socket : "", price, qty});
             }
         });
     }
