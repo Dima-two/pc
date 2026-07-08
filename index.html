@@ -72,6 +72,13 @@ body{
     margin:0;
     font-size:18px;
 }
+.card-title-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap;
+}
 .badge{
     padding:5px 10px;
     border-radius:999px;
@@ -455,9 +462,9 @@ tbody tr:hover{background:#f8fbff;}
     display:inline-flex;
     align-items:center;
     gap:6px;
-    padding:4px 9px;
+    padding:2px 7px;
     border-radius:999px;
-    font-size:12px;
+    font-size:10px;
     font-weight:bold;
     white-space:nowrap;
 }
@@ -553,6 +560,7 @@ tbody tr:hover{background:#f8fbff;}
 .legend-sale{background:#0ea5e9;}
 .legend-profit{background:#159447;}
 .legend-loss{background:#d92d20;}
+.legend-sold{background:#b42318;}
 
 .inventory-form{
     display:grid;
@@ -681,6 +689,41 @@ tbody tr:hover{background:#f8fbff;}
     .pc-view-controls{display:grid;grid-template-columns:1fr;}
     .pc-view-controls .btn{width:100%;}
 }
+
+
+/* Fix: butoanele de jos și totalurile lunare pe un singur rând pe ecran mare */
+.footer-actions{
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:10px;
+    justify-content:stretch;
+    align-items:center;
+}
+.footer-actions .btn{
+    min-width:0;
+    width:100%;
+    white-space:nowrap;
+    padding-left:10px;
+    padding-right:10px;
+}
+.monthly-summary{
+    grid-template-columns:repeat(5,minmax(0,1fr));
+}
+.monthly-stat{
+    min-width:0;
+}
+.monthly-stat .value{
+    font-size:21px;
+    white-space:nowrap;
+}
+@media(max-width:980px){
+    .footer-actions{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .monthly-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:620px){
+    .footer-actions,.monthly-summary{grid-template-columns:1fr;}
+}
+
 </style>
 </head>
 <body>
@@ -689,7 +732,10 @@ tbody tr:hover{background:#f8fbff;}
         <section class="card">
             <div class="card-title">
                 <h2>1. Alege componenta</h2>
-                <span class="badge" id="activeCategoryBadge">CPU</span>
+                <div class="card-title-actions">
+                    <span class="badge" id="activeCategoryBadge">CPU</span>
+                    <button class="btn btn-secondary btn-small" id="toggleComponentPickerBtn" onclick="toggleComponentPickerListVisibility()">Ascunde lista</button>
+                </div>
             </div>
             <div class="panel-body">
                 <div class="categories" id="categories"></div>
@@ -730,7 +776,10 @@ tbody tr:hover{background:#f8fbff;}
         <section class="card">
             <div class="card-title">
                 <h2>2. Configurația PC</h2>
-                <span class="badge" id="itemsCount">0 componente</span>
+                <div class="card-title-actions">
+                    <span class="badge" id="itemsCount">0 componente</span>
+                    <button class="btn btn-blue btn-small" id="toggleCurrentComponentsBtn" onclick="toggleCurrentComponentsListVisibility()">Afișează componentele</button>
+                </div>
             </div>
             <div class="panel-body">
                 <div class="pc-manager">
@@ -740,14 +789,14 @@ tbody tr:hover{background:#f8fbff;}
                     </div>
                     <div class="active-pc-line">PC activ: <b id="activePcLabel">Nesalvat</b></div>
                     <div class="pc-view-controls">
-                        <button class="btn btn-secondary btn-small" id="togglePcListBtn" onclick="togglePcListVisibility()">Ascunde lista</button>
+                        <button class="btn btn-blue btn-small" id="togglePcListBtn" onclick="togglePcListVisibility()">Afișează lista</button>
                         <label class="toggle-check" for="showSoldOnly">
                             <input type="checkbox" id="showSoldOnly" onchange="toggleSoldOnly(this.checked)">
                             Calculatoarele vândute
                         </label>
                     </div>
                     <div class="pc-filter-note" id="pcFilterNote"></div>
-                    <div class="pc-list" id="pcList"></div>
+                    <div class="pc-list" id="pcList" style="display:none;"></div>
                     <div class="pc-list-actions">
                         <button class="btn btn-secondary btn-small" onclick="newDraft()">PC nou</button>
                         <button class="btn btn-primary btn-small" onclick="addCurrentAsPC()">Adaugă</button>
@@ -791,7 +840,7 @@ tbody tr:hover{background:#f8fbff;}
                     <strong>Compatibilitate CPU / MB</strong>
                 </div>
 
-                <div class="table-wrap">
+                <div class="table-wrap" id="currentComponentsListWrap">
                     <table>
                         <thead>
                             <tr>
@@ -819,43 +868,11 @@ tbody tr:hover{background:#f8fbff;}
 
     <section class="card chart-card">
         <div class="card-title">
-            <h2>3. Graficul calculatoarelor</h2>
-            <span class="badge" id="chartCount">0 PC-uri</span>
-        </div>
-        <div class="panel-body">
-            <div class="chart-summary" id="chartTotals">
-                <div class="chart-total">
-                    <div class="label">Investiții</div>
-                    <div class="value">0 lei</div>
-                </div>
-                <div class="chart-total">
-                    <div class="label">Vânzare</div>
-                    <div class="value">0 lei</div>
-                </div>
-                <div class="chart-total profit">
-                    <div class="label">Profit</div>
-                    <div class="value">0 lei</div>
-                </div>
+            <h2>3. Stoc componente</h2>
+            <div class="card-title-actions">
+                <span class="badge" id="inventoryCount">0 poziții</span>
+                <button class="btn btn-secondary btn-small" id="toggleInventoryListBtn" onclick="toggleInventoryListVisibility()">Ascunde lista</button>
             </div>
-
-            <div class="chart-wrap">
-                <canvas id="pcChart" height="360"></canvas>
-            </div>
-
-            <div class="chart-legend">
-                <span class="legend-item"><span class="legend-dot legend-cost"></span>Investit</span>
-                <span class="legend-item"><span class="legend-dot legend-sale"></span>Vânzare</span>
-                <span class="legend-item"><span class="legend-dot legend-profit"></span>Profit</span>
-                <span class="legend-item"><span class="legend-dot legend-loss"></span>Pierdere</span>
-            </div>
-        </div>
-    </section>
-
-
-    <section class="card chart-card">
-        <div class="card-title">
-            <h2>4. Stoc componente</h2>
-            <span class="badge" id="inventoryCount">0 poziții</span>
         </div>
         <div class="panel-body">
             <div class="inventory-form">
@@ -894,7 +911,7 @@ tbody tr:hover{background:#f8fbff;}
                 </div>
             </div>
 
-            <div class="table-wrap">
+            <div class="table-wrap" id="inventoryListWrap">
                 <table>
                     <thead>
                         <tr>
@@ -916,12 +933,57 @@ tbody tr:hover{background:#f8fbff;}
         </div>
     </section>
 
+
+    <section class="card chart-card">
+        <div class="card-title">
+            <h2>4. Graficul calculatoarelor</h2>
+            <div class="card-title-actions">
+                <span class="badge" id="chartCount">0 PC-uri</span>
+                <button class="btn btn-blue btn-small" id="toggleBuildChartBtn" onclick="toggleBuildChartVisibility()">Afișează graficul</button>
+            </div>
+        </div>
+        <div class="panel-body" id="buildChartBody">
+            <div class="chart-summary" id="chartTotals">
+                <div class="chart-total">
+                    <div class="label">Investiții</div>
+                    <div class="value">0 lei</div>
+                </div>
+                <div class="chart-total">
+                    <div class="label">Vânzare</div>
+                    <div class="value">0 lei</div>
+                </div>
+                <div class="chart-total profit">
+                    <div class="label">Profit</div>
+                    <div class="value">0 lei</div>
+                </div>
+            </div>
+
+            <div id="buildChartVisual" style="display:none;">
+                <div class="chart-wrap">
+                    <canvas id="pcChart" height="360"></canvas>
+                </div>
+
+                <div class="chart-legend">
+                    <span class="legend-item"><span class="legend-dot legend-cost"></span>Investit</span>
+                    <span class="legend-item"><span class="legend-dot legend-sale"></span>Vânzare</span>
+                    <span class="legend-item"><span class="legend-dot legend-profit"></span>Profit</span>
+                    <span class="legend-item"><span class="legend-dot legend-loss"></span>Pierdere</span>
+                    <span class="legend-item"><span class="legend-dot legend-sold"></span>Calculator vândut</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
     <section class="card chart-card">
         <div class="card-title">
             <h2>5. Statistică lunară</h2>
-            <span class="badge" id="monthlyCount">0 vânzări</span>
+            <div class="card-title-actions">
+                <span class="badge" id="monthlyCount">0 vânzări</span>
+                <button class="btn btn-blue btn-small" id="toggleMonthlyStatsBtn" onclick="toggleMonthlyStatsVisibility()">Afișează graficul</button>
+            </div>
         </div>
-        <div class="panel-body">
+        <div class="panel-body" id="monthlyStatsBody">
             <div class="monthly-summary" id="monthlyTotals">
                 <div class="monthly-stat">
                     <div class="label">Calculatoare vândute</div>
@@ -941,15 +1003,17 @@ tbody tr:hover{background:#f8fbff;}
                 </div>
             </div>
 
-            <div class="monthly-chart-wrap">
-                <canvas id="monthlyChart" height="360"></canvas>
-            </div>
+            <div id="monthlyChartVisual" style="display:none;">
+                <div class="monthly-chart-wrap">
+                    <canvas id="monthlyChart" height="360"></canvas>
+                </div>
 
-            <div class="chart-legend">
-                <span class="legend-item"><span class="legend-dot legend-cost"></span>Investit</span>
-                <span class="legend-item"><span class="legend-dot legend-sale"></span>Vânzare</span>
-                <span class="legend-item"><span class="legend-dot legend-profit"></span>Profit</span>
-                <span class="legend-item"><span class="legend-dot legend-loss"></span>Pierdere</span>
+                <div class="chart-legend">
+                    <span class="legend-item"><span class="legend-dot legend-cost"></span>Investit</span>
+                    <span class="legend-item"><span class="legend-dot legend-sale"></span>Vânzare</span>
+                    <span class="legend-item"><span class="legend-dot legend-profit"></span>Profit</span>
+                    <span class="legend-item"><span class="legend-dot legend-loss"></span>Pierdere</span>
+                </div>
             </div>
 
             <h3 class="monthly-table-title">Lista vânzărilor</h3>
@@ -1149,6 +1213,11 @@ const ACTIVE_BUILD_KEY = "pc_builder_active_build_v4";
 const INVENTORY_KEY = "pc_builder_inventory_v1";
 const PC_LIST_HIDDEN_KEY = "pc_builder_pc_list_hidden_v1";
 const PC_SHOW_SOLD_ONLY_KEY = "pc_builder_show_sold_items_v2";
+const COMPONENT_PICKER_LIST_HIDDEN_KEY = "pc_builder_component_picker_list_hidden_v1";
+const CURRENT_COMPONENTS_LIST_HIDDEN_KEY = "pc_builder_current_components_list_hidden_v1";
+const INVENTORY_LIST_HIDDEN_KEY = "pc_builder_inventory_list_hidden_v1";
+const BUILD_CHART_HIDDEN_KEY = "pc_builder_build_chart_visual_hidden_v1";
+const MONTHLY_STATS_HIDDEN_KEY = "pc_builder_monthly_chart_visual_hidden_v1";
 
 let builds = loadBuilds();
 let activeBuildId = localStorage.getItem(ACTIVE_BUILD_KEY) || null;
@@ -1157,8 +1226,13 @@ let inventory = loadInventory();
 let selectedCat = "CPU";
 let selectedComp = null;
 let expandedBuildIds = new Set();
-let pcListHidden = localStorage.getItem(PC_LIST_HIDDEN_KEY) === "1";
+let pcListHidden = localStorage.getItem(PC_LIST_HIDDEN_KEY) !== "0";
 let showSoldOnly = localStorage.getItem(PC_SHOW_SOLD_ONLY_KEY) === "1";
+let componentPickerListHidden = localStorage.getItem(COMPONENT_PICKER_LIST_HIDDEN_KEY) === "1";
+let currentComponentsListHidden = localStorage.getItem(CURRENT_COMPONENTS_LIST_HIDDEN_KEY) !== "0";
+let inventoryListHidden = localStorage.getItem(INVENTORY_LIST_HIDDEN_KEY) === "1";
+let buildChartHidden = localStorage.getItem(BUILD_CHART_HIDDEN_KEY) !== "0";
+let monthlyStatsHidden = localStorage.getItem(MONTHLY_STATS_HIDDEN_KEY) !== "0";
 
 function normalizeComponents(items){
     if(!Array.isArray(items)) return [];
@@ -1400,6 +1474,7 @@ function init(){
     renderSavedBuilds();
     renderChart();
     renderInventory();
+    updateInventoryListControls();
     updateActivePcLabel();
 
     document.getElementById("buyPrice").addEventListener("keydown", function(e){
@@ -1429,6 +1504,24 @@ function showCategory(cat){
     renderComponents();
 }
 
+function updateComponentPickerListControls(){
+    const list = document.getElementById("components");
+    const btn = document.getElementById("toggleComponentPickerBtn");
+    if(list){
+        list.style.display = componentPickerListHidden ? "none" : "block";
+    }
+    if(btn){
+        btn.textContent = componentPickerListHidden ? "Afișează lista" : "Ascunde lista";
+        btn.className = componentPickerListHidden ? "btn btn-blue btn-small" : "btn btn-secondary btn-small";
+    }
+}
+
+function toggleComponentPickerListVisibility(){
+    componentPickerListHidden = !componentPickerListHidden;
+    localStorage.setItem(COMPONENT_PICKER_LIST_HIDDEN_KEY, componentPickerListHidden ? "1" : "0");
+    updateComponentPickerListControls();
+}
+
 function renderSocketFilter(){
     const wrap = document.getElementById("socketFilterWrap");
     const select = document.getElementById("socketFilter");
@@ -1455,6 +1548,7 @@ function renderComponents(){
 
     if(items.length === 0){
         holder.innerHTML = '<div class="empty">Nu s-a găsit nicio componentă.</div>';
+        updateComponentPickerListControls();
         return;
     }
 
@@ -1467,6 +1561,7 @@ function renderComponents(){
         btn.onclick = () => selectComponent(item);
         holder.appendChild(btn);
     });
+    updateComponentPickerListControls();
 }
 
 function selectComponent(item){
@@ -1681,6 +1776,24 @@ function toggleSoldOnly(checked){
     renderSavedBuilds();
 }
 
+function updateCurrentComponentsListControls(){
+    const wrap = document.getElementById("currentComponentsListWrap");
+    const btn = document.getElementById("toggleCurrentComponentsBtn");
+    if(wrap){
+        wrap.style.display = currentComponentsListHidden ? "none" : "block";
+    }
+    if(btn){
+        btn.textContent = currentComponentsListHidden ? "Afișează componentele" : "Ascunde componentele";
+        btn.className = currentComponentsListHidden ? "btn btn-blue btn-small" : "btn btn-secondary btn-small";
+    }
+}
+
+function toggleCurrentComponentsListVisibility(){
+    currentComponentsListHidden = !currentComponentsListHidden;
+    localStorage.setItem(CURRENT_COMPONENTS_LIST_HIDDEN_KEY, currentComponentsListHidden ? "1" : "0");
+    updateCurrentComponentsListControls();
+}
+
 function renderSavedBuilds(){
     const holder = document.getElementById("pcList");
     const count = document.getElementById("savedCount");
@@ -1786,6 +1899,48 @@ function toggleBuildDetails(id){
     renderSavedBuilds();
 }
 
+function updateBuildChartControls(){
+    const visual = document.getElementById("buildChartVisual");
+    const btn = document.getElementById("toggleBuildChartBtn");
+    if(visual){
+        visual.style.display = buildChartHidden ? "none" : "block";
+    }
+    if(btn){
+        btn.textContent = buildChartHidden ? "Afișează graficul" : "Ascunde graficul";
+        btn.className = buildChartHidden ? "btn btn-blue btn-small" : "btn btn-secondary btn-small";
+    }
+}
+
+function toggleBuildChartVisibility(){
+    buildChartHidden = !buildChartHidden;
+    localStorage.setItem(BUILD_CHART_HIDDEN_KEY, buildChartHidden ? "1" : "0");
+    updateBuildChartControls();
+    if(!buildChartHidden){
+        renderChart();
+    }
+}
+
+function updateMonthlyStatsControls(){
+    const visual = document.getElementById("monthlyChartVisual");
+    const btn = document.getElementById("toggleMonthlyStatsBtn");
+    if(visual){
+        visual.style.display = monthlyStatsHidden ? "none" : "block";
+    }
+    if(btn){
+        btn.textContent = monthlyStatsHidden ? "Afișează graficul" : "Ascunde graficul";
+        btn.className = monthlyStatsHidden ? "btn btn-blue btn-small" : "btn btn-secondary btn-small";
+    }
+}
+
+function toggleMonthlyStatsVisibility(){
+    monthlyStatsHidden = !monthlyStatsHidden;
+    localStorage.setItem(MONTHLY_STATS_HIDDEN_KEY, monthlyStatsHidden ? "1" : "0");
+    updateMonthlyStatsControls();
+    if(!monthlyStatsHidden){
+        renderMonthlyStats();
+    }
+}
+
 
 function shortenChartLabel(text, maxLength = 24){
     const value = String(text || "PC");
@@ -1797,28 +1952,39 @@ function updateChartTotals(chartData){
     const count = document.getElementById("chartCount");
     if(!holder || !count) return;
 
-    const totalCost = chartData.reduce((sum,item)=>sum + item.cost, 0);
-    const totalSale = chartData.reduce((sum,item)=>sum + item.sale, 0);
-    const totalProfit = chartData.reduce((sum,item)=>sum + item.profit, 0);
+    // În totalurile graficului general se calculează doar calculatoarele nevândute.
+    // Cele vândute rămân vizibile în grafic, dar sunt marcate cu roșu și nu intră în investiții/vânzări/profit aici.
+    const activeChartData = chartData.filter(item => !item.sold);
+    const soldCount = chartData.length - activeChartData.length;
 
-    count.textContent = chartData.length === 1 ? "1 PC" : `${chartData.length} PC-uri`;
+    const totalCost = activeChartData.reduce((sum,item)=>sum + item.cost, 0);
+    const totalSale = activeChartData.reduce((sum,item)=>sum + item.sale, 0);
+    const totalProfit = activeChartData.reduce((sum,item)=>sum + item.profit, 0);
+
+    if(soldCount > 0){
+        count.textContent = `${activeChartData.length} active / ${chartData.length} total`;
+    }else{
+        count.textContent = chartData.length === 1 ? "1 PC" : `${chartData.length} PC-uri`;
+    }
+
     holder.innerHTML = `
         <div class="chart-total">
-            <div class="label">Investiții</div>
+            <div class="label">Investiții active</div>
             <div class="value">${formatMoney(totalCost)} lei</div>
         </div>
         <div class="chart-total">
-            <div class="label">Vânzare</div>
+            <div class="label">Vânzări active</div>
             <div class="value">${formatMoney(totalSale)} lei</div>
         </div>
         <div class="chart-total profit ${totalProfit > 0 ? "positive" : totalProfit < 0 ? "negative" : ""}">
-            <div class="label">Profit</div>
+            <div class="label">Profit activ</div>
             <div class="value">${formatMoney(totalProfit)} lei</div>
         </div>
     `;
 }
 
 function renderChart(){
+    updateBuildChartControls();
     const canvas = document.getElementById("pcChart");
     if(!canvas) return;
 
@@ -1829,7 +1995,9 @@ function renderChart(){
             name: build.name || "PC",
             cost,
             sale,
-            profit: sale - cost
+            profit: sale - cost,
+            sold: Boolean(build.sold),
+            soldAt: getBuildSoldDate(build)
         };
     });
 
@@ -1839,8 +2007,8 @@ function renderChart(){
     const wrapper = canvas.parentElement;
     const dpr = window.devicePixelRatio || 1;
     const cssWidth = Math.max(720, wrapper.clientWidth - 24);
-    const rowHeight = 78;
-    const cssHeight = chartData.length ? Math.max(340, 110 + chartData.length * rowHeight) : 300;
+    const rowHeight = 92;
+    const cssHeight = chartData.length ? Math.max(340, 120 + chartData.length * rowHeight) : 300;
 
     canvas.style.width = cssWidth + "px";
     canvas.style.height = cssHeight + "px";
@@ -1863,10 +2031,10 @@ function renderChart(){
         return;
     }
 
-    const left = 175;
-    const right = 34;
+    const left = Math.min(330, Math.max(250, Math.round(cssWidth * 0.34)));
+    const right = 92;
     const top = 42;
-    const bottom = 42;
+    const bottom = 46;
     const chartWidth = cssWidth - left - right;
     const values = chartData.flatMap(item => [item.cost, item.sale, item.profit]);
     let minValue = Math.min(0, ...values);
@@ -1907,22 +2075,38 @@ function renderChart(){
     ctx.stroke();
 
     chartData.forEach((item,index)=>{
-        const baseY = top + index * rowHeight + 20;
-        const bars = [
+        const rowTop = top + index * rowHeight;
+        const baseY = rowTop + 34;
+        const bars = item.sold ? [
+            {label:"Investit", value:item.cost, color:"#d92d20", offset:-16},
+            {label:"Vânzare", value:item.sale, color:"#f04438", offset:0},
+            {label:"Profit", value:item.profit, color:"#b42318", offset:16}
+        ] : [
             {label:"Investit", value:item.cost, color:"#2363eb", offset:-16},
             {label:"Vânzare", value:item.sale, color:"#0ea5e9", offset:0},
             {label:"Profit", value:item.profit, color:item.profit < 0 ? "#d92d20" : "#159447", offset:16}
         ];
 
-        ctx.fillStyle = "#172033";
+        if(item.sold){
+            ctx.fillStyle = "rgba(254, 228, 226, 0.45)";
+            ctx.fillRect(8, rowTop + 2, cssWidth - 16, rowHeight - 8);
+        }
+
+        const labelX = left - 16;
+        ctx.fillStyle = item.sold ? "#b42318" : "#172033";
         ctx.font = "bold 13px Arial";
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
-        ctx.fillText(shortenChartLabel(item.name), left - 14, baseY);
+        ctx.fillText(shortenChartLabel(item.name, 26) + (item.sold ? " • Vândut" : ""), labelX, baseY - 16);
 
-        ctx.fillStyle = "#667085";
+        ctx.fillStyle = item.sold ? "#b42318" : "#667085";
         ctx.font = "11px Arial";
-        ctx.fillText(`${formatMoney(item.cost)} / ${formatMoney(item.sale)} / ${formatMoney(item.profit)} lei`, left - 14, baseY + 18);
+        if(item.sold){
+            ctx.fillText(`Data: ${formatDateRo(item.soldAt)}`, labelX, baseY);
+            ctx.fillText(`Inv. ${formatMoney(item.cost)} | Vânz. ${formatMoney(item.sale)} | Profit ${formatMoney(item.profit)}`, labelX, baseY + 16);
+        }else{
+            ctx.fillText(`Inv. ${formatMoney(item.cost)} | Vânz. ${formatMoney(item.sale)} | Profit ${formatMoney(item.profit)}`, labelX, baseY + 8);
+        }
 
         bars.forEach(bar=>{
             const y = baseY + bar.offset;
@@ -1949,12 +2133,20 @@ function renderChart(){
             ctx.fill();
 
             if(Math.abs(bar.value) > 0){
-                ctx.fillStyle = "#344054";
+                ctx.fillStyle = item.sold ? "#b42318" : "#344054";
                 ctx.font = "11px Arial";
-                ctx.textAlign = bar.value >= 0 ? "left" : "right";
                 ctx.textBaseline = "middle";
-                const labelX = bar.value >= 0 ? barEnd + 5 : barX - 5;
-                ctx.fillText(formatMoney(bar.value), labelX, y);
+                const rawLabelX = bar.value >= 0 ? barEnd + 6 : barX - 6;
+                if(bar.value >= 0 && rawLabelX > cssWidth - 58){
+                    ctx.textAlign = "right";
+                    ctx.fillText(formatMoney(bar.value), cssWidth - 10, y);
+                }else if(bar.value < 0 && rawLabelX < 50){
+                    ctx.textAlign = "left";
+                    ctx.fillText(formatMoney(bar.value), 10, y);
+                }else{
+                    ctx.textAlign = bar.value >= 0 ? "left" : "right";
+                    ctx.fillText(formatMoney(bar.value), rawLabelX, y);
+                }
             }
         });
     });
@@ -2103,7 +2295,7 @@ function renderMonthlyChart(months){
         ctx.textAlign = "center";
         ctx.fillText("Nu există vânzări lunare încă.", cssWidth / 2, cssHeight / 2 - 8);
         ctx.font = "14px Arial";
-        ctx.fillText("Marchează un PC ca «Vândut» și setează data vânzării.", cssWidth / 2, cssHeight / 2 + 18);
+        ctx.fillText("Marchează un PC ca «Vândut» sau vinde o componentă din stoc.", cssWidth / 2, cssHeight / 2 + 18);
         return;
     }
 
@@ -2165,7 +2357,7 @@ function renderMonthlyChart(months){
 
         ctx.fillStyle = "#667085";
         ctx.font = "11px Arial";
-        ctx.fillText(`${item.count} PC · ${formatMoney(item.sale)} lei`, left - 14, baseY + 19);
+        ctx.fillText(`${item.count} vânzări · ${formatMoney(item.sale)} lei`, left - 14, baseY + 19);
 
         bars.forEach(bar=>{
             const y = baseY + bar.offset;
@@ -2209,6 +2401,7 @@ function renderMonthlyChart(months){
 }
 
 function renderMonthlyStats(){
+    updateMonthlyStatsControls();
     const sales = getSoldSalesData();
     const months = getMonthlyStatsData();
     updateMonthlyTotals(sales);
@@ -2236,6 +2429,7 @@ function render(){
         });
     }
     document.getElementById("itemsCount").textContent = data.length === 1 ? "1 componentă" : `${data.length} componente`;
+    updateCurrentComponentsListControls();
     renderTotalsOnly();
     renderSavedBuilds();
     renderChart();
@@ -2381,6 +2575,24 @@ function resetInventory(){
     renderInventory();
 }
 
+function updateInventoryListControls(){
+    const wrap = document.getElementById("inventoryListWrap");
+    const btn = document.getElementById("toggleInventoryListBtn");
+    if(wrap){
+        wrap.style.display = inventoryListHidden ? "none" : "block";
+    }
+    if(btn){
+        btn.textContent = inventoryListHidden ? "Afișează lista" : "Ascunde lista";
+        btn.className = inventoryListHidden ? "btn btn-blue btn-small" : "btn btn-secondary btn-small";
+    }
+}
+
+function toggleInventoryListVisibility(){
+    inventoryListHidden = !inventoryListHidden;
+    localStorage.setItem(INVENTORY_LIST_HIDDEN_KEY, inventoryListHidden ? "1" : "0");
+    updateInventoryListControls();
+}
+
 function renderInventoryTotals(){
     const holder = document.getElementById("inventoryTotals");
     const count = document.getElementById("inventoryCount");
@@ -2413,6 +2625,7 @@ function renderInventory(){
     if(inventory.length === 0){
         list.innerHTML = '<tr><td colspan="6" class="table-empty">Nu ai introdus componente în stoc.</td></tr>';
         renderInventoryTotals();
+        updateInventoryListControls();
         return;
     }
 
@@ -2434,6 +2647,7 @@ function renderInventory(){
         list.appendChild(tr);
     });
     renderInventoryTotals();
+    updateInventoryListControls();
 }
 
 function createInventorySheetRows(){
@@ -2795,5 +3009,1459 @@ function resetAll(){
 
 init();
 </script>
+
+
+<style id="pc-builder-plus-styles">
+.business-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.business-stat{padding:13px 14px;border-radius:15px;background:#f8fafc;border:1px solid var(--line);}
+.business-stat .label{color:var(--muted);font-size:12px;margin-bottom:6px;}
+.business-stat .value{font-size:22px;font-weight:bold;}
+.business-stat.profit.positive{background:var(--green-light);border-color:#b7e4c7;}
+.business-stat.profit.negative{background:#fff1f0;border-color:#ffb8b1;}
+.pc-extra-controls{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;margin:10px 0 12px;}
+.pc-extra-controls input,.pc-extra-controls select{padding:9px 10px;font-size:13px;border-radius:10px;}
+.price-recommendations{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:-5px 0 14px;}
+.rec-btn{border:1px solid #dbe4ef;background:#fff;border-radius:12px;padding:10px;cursor:pointer;text-align:left;}
+.rec-btn:hover{border-color:var(--primary);background:#f4f7ff;}
+.rec-btn strong{display:block;color:#172033;font-size:13px;}
+.rec-btn span{display:block;color:var(--muted);font-size:12px;margin-top:3px;}
+.warnings-panel{display:grid;gap:8px;margin-bottom:14px;}
+.warning-item{padding:10px 12px;border-radius:12px;border:1px solid #f5dc8b;background:#fff7df;color:#7a4b00;font-size:13px;}
+.warning-item.bad{background:#fff1f0;border-color:#ffb8b1;color:#b42318;}
+.warning-item.ok{background:#eaf8ef;border-color:#b7e4c7;color:#126734;}
+.stock-pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 8px;background:#ecfdf3;color:#166534;font-size:12px;font-weight:bold;margin-left:6px;}
+.source-pill{display:inline-flex;border-radius:999px;padding:3px 7px;background:#eef4ff;color:#2442a8;font-size:11px;font-weight:bold;margin-left:6px;}
+.status-select{width:auto;padding:6px 8px;font-size:12px;border-radius:10px;min-width:105px;}
+.client-print-box{display:none;}
+@media(max-width:980px){.business-summary,.price-recommendations{grid-template-columns:repeat(2,1fr);} .pc-extra-controls{grid-template-columns:1fr;}}
+@media(max-width:620px){.business-summary,.price-recommendations{grid-template-columns:1fr;}}
+@media print{.no-print{display:none!important;}.client-print-box{display:block;}}
+</style>
+
+<script id="pc-builder-plus-script">
+(function(){
+    const PC_STATUS_FILTER_KEY_V2 = "pc_builder_status_filter_v2";
+    const PC_SORT_KEY_V2 = "pc_builder_sort_mode_v2";
+    const STATUS_LABELS = {work:"În lucru", ready:"Gata", sold:"Vândut"};
+    const STATUS_CLASSES = {work:"status-unsold", ready:"status-unsold", sold:"status-sold"};
+    let pcStatusFilter = localStorage.getItem(PC_STATUS_FILTER_KEY_V2) || (typeof showSoldOnly !== "undefined" && showSoldOnly ? "sold" : "unsold");
+    let pcSortMode = localStorage.getItem(PC_SORT_KEY_V2) || "updated_desc";
+    let pcSearchText = "";
+
+    function makeInventoryId(){
+        return "inv_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
+    }
+
+    function normalizeComponentsPlus(items){
+        if(!Array.isArray(items)) return [];
+        return items.map(x=>{
+            const qtyRaw = x.qty ?? x.quantity ?? x["Cantitate"] ?? x["Cant."] ?? 1;
+            return {
+                cat:String(x.cat || x.category || x["Categorie"] || "").trim(),
+                name:String(x.name || x.component || x["Componentă"] || x["Componenta"] || "").trim(),
+                socket:String(x.socket || x["Socket"] || "").trim(),
+                price:Number(x.price ?? x.buyPrice ?? x["Preț bucata lei"] ?? x["Pret bucata lei"] ?? x["Preț cumpărare lei"] ?? x["Pret cumparare lei"] ?? x["Preț"] ?? x["Pret"] ?? 0) || 0,
+                qty:Math.max(1, Number(qtyRaw) || 1),
+                inventoryId:String(x.inventoryId || x.stocId || x["ID stoc"] || ""),
+                source:String(x.source || x.sursa || x["Sursă"] || "")
+            };
+        }).filter(x=>x.cat && x.name);
+    }
+
+    function normalizeInventoryPlus(items){
+        if(!Array.isArray(items)) return [];
+        return items.map(x=>({
+            id:String(x.id || x.inventoryId || x["ID stoc"] || makeInventoryId()),
+            cat:String(x.cat || x.category || x["Categorie"] || "").trim(),
+            name:String(x.name || x.component || x["Componentă"] || x["Componenta"] || "").trim(),
+            price:Number(x.price ?? x.buyPrice ?? x["Preț bucata lei"] ?? x["Pret bucata lei"] ?? x["Preț"] ?? x["Pret"] ?? 0) || 0,
+            qty:Math.max(0, Number(x.qty ?? x.quantity ?? x["Cantitate"] ?? 0) || 0)
+        })).filter(x=>x.cat && x.name);
+    }
+
+    function isBuildSoldPlus(build){
+        return Boolean(build && (build.sold || build.status === "sold"));
+    }
+
+    function getBuildStatusPlus(build){
+        if(!build) return "work";
+        if(build.status === "ready" || build.status === "sold" || build.status === "work") return build.status;
+        return Boolean(build.sold) ? "sold" : "work";
+    }
+
+    function syncStatus(build){
+        if(!build) return build;
+        build.components = normalizeComponentsPlus(build.components || []);
+        build.status = getBuildStatusPlus(build);
+        build.sold = build.status === "sold";
+        if(build.sold){
+            build.soldAt = normalizeDateInput(build.soldAt || build.soldDate || build.saleDate || "") || todayISODate();
+        }else{
+            build.soldAt = "";
+        }
+        return build;
+    }
+
+    try{ normalizeComponents = normalizeComponentsPlus; }catch(e){}
+    try{ normalizeInventory = normalizeInventoryPlus; }catch(e){}
+    window.normalizeComponents = normalizeComponentsPlus;
+    window.normalizeInventory = normalizeInventoryPlus;
+
+    function migratePlusData(){
+        try{ inventory = normalizeInventoryPlus(inventory); persistInventory(); }catch(e){}
+        try{
+            builds = (Array.isArray(builds) ? builds : []).map(syncStatus);
+            data = normalizeComponentsPlus(data);
+            persistBuilds();
+            localStorage.setItem(LEGACY_COMPONENTS_KEY, JSON.stringify(data));
+        }catch(e){}
+    }
+
+    function componentKey(cat, name){
+        return String(cat || "").trim().toLowerCase() + "||" + String(name || "").trim().toLowerCase();
+    }
+
+    function findInventoryForComponent(cat, name){
+        const key = componentKey(cat, name);
+        return inventory.find(item => componentKey(item.cat, item.name) === key && (Number(item.qty) || 0) > 0) || null;
+    }
+
+    function findInventoryById(id){
+        return inventory.find(item => String(item.id) === String(id)) || null;
+    }
+
+    function deductFromInventory(invItem, qty){
+        if(!invItem) return false;
+        qty = Math.max(1, Number(qty) || 1);
+        if((Number(invItem.qty) || 0) < qty) return false;
+        invItem.qty = (Number(invItem.qty) || 0) - qty;
+        persistInventory();
+        renderInventory();
+        return true;
+    }
+
+    function returnToInventory(component, qty){
+        qty = Math.max(1, Number(qty ?? component.qty) || 1);
+        if(component && component.inventoryId){
+            const invItem = findInventoryById(component.inventoryId);
+            if(invItem){
+                invItem.qty = (Number(invItem.qty) || 0) + qty;
+                persistInventory();
+                renderInventory();
+                return;
+            }
+        }
+        if(component && component.source === "stoc"){
+            inventory.push({id:makeInventoryId(), cat:component.cat, name:component.name, price:Number(component.price)||0, qty});
+            persistInventory();
+            renderInventory();
+        }
+    }
+
+    function insertPlusUI(){
+        const inventorySection = document.getElementById("inventoryCount")?.closest("section");
+        if(inventorySection && !document.getElementById("businessSummaryCard")){
+            const section = document.createElement("section");
+            section.className = "card chart-card";
+            section.id = "businessSummaryCard";
+            section.innerHTML = `
+                <div class="card-title">
+                    <h2>Sumar general</h2>
+                    <span class="badge" id="businessSummaryBadge">Actualizat</span>
+                </div>
+                <div class="panel-body">
+                    <div class="business-summary" id="businessSummary"></div>
+                </div>`;
+            inventorySection.parentNode.insertBefore(section, inventorySection);
+        }
+
+        const pcControls = document.querySelector(".pc-view-controls");
+        if(pcControls && !document.getElementById("pcExtraControls")){
+            const extra = document.createElement("div");
+            extra.className = "pc-extra-controls";
+            extra.id = "pcExtraControls";
+            extra.innerHTML = `
+                <input id="pcSearchInput" placeholder="Caută PC după nume..." oninput="pcSearchText=this.value; renderSavedBuilds();">
+                <select id="pcStatusFilter" onchange="setPcStatusFilter(this.value)">
+                    <option value="unsold">Active: în lucru + gata</option>
+                    <option value="work">Doar în lucru</option>
+                    <option value="ready">Doar gata</option>
+                    <option value="sold">Doar vândute</option>
+                    <option value="all">Toate PC-urile</option>
+                </select>
+                <select id="pcSortMode" onchange="setPcSortMode(this.value)">
+                    <option value="updated_desc">Ultimele modificate</option>
+                    <option value="name_asc">Nume A-Z</option>
+                    <option value="cost_desc">Investiție mare</option>
+                    <option value="profit_desc">Profit mare</option>
+                    <option value="sale_desc">Preț vânzare mare</option>
+                </select>`;
+            pcControls.parentNode.insertBefore(extra, pcControls.nextSibling);
+        }
+
+        const currentWrap = document.getElementById("currentComponentsListWrap");
+        if(currentWrap && !currentWrap.dataset.plusHeader){
+            currentWrap.dataset.plusHeader = "1";
+            currentWrap.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Categorie</th>
+                            <th>Componentă</th>
+                            <th>Socket</th>
+                            <th>Preț/buc.</th>
+                            <th>Cantitate</th>
+                            <th>Total</th>
+                            <th>Șterge</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list"></tbody>
+                </table>`;
+        }
+
+        const sellPanel = document.querySelector(".sell-panel");
+        if(sellPanel && !document.getElementById("priceRecommendations")){
+            const rec = document.createElement("div");
+            rec.className = "price-recommendations";
+            rec.id = "priceRecommendations";
+            sellPanel.insertAdjacentElement("afterend", rec);
+        }
+
+        const compat = document.getElementById("compatibilityPanel");
+        if(compat && !document.getElementById("appWarnings")){
+            const warnings = document.createElement("div");
+            warnings.id = "appWarnings";
+            warnings.className = "warnings-panel";
+            compat.insertAdjacentElement("afterend", warnings);
+        }
+
+        const footer = document.querySelector(".footer-actions");
+        if(footer && !document.getElementById("backupJsonBtn")){
+            const backupBtn = document.createElement("button");
+            backupBtn.className = "btn btn-secondary";
+            backupBtn.id = "backupJsonBtn";
+            backupBtn.type = "button";
+            backupBtn.textContent = "Backup JSON";
+            backupBtn.onclick = backupJSON;
+            const clientBtn = document.createElement("button");
+            clientBtn.className = "btn btn-blue";
+            clientBtn.id = "clientSheetBtn";
+            clientBtn.type = "button";
+            clientBtn.textContent = "Fișă client";
+            clientBtn.onclick = printClientSheet;
+            footer.insertBefore(backupBtn, footer.firstChild);
+            footer.insertBefore(clientBtn, footer.firstChild);
+        }
+    }
+
+    window.setPcStatusFilter = function(value){
+        pcStatusFilter = value || "unsold";
+        showSoldOnly = pcStatusFilter === "sold";
+        localStorage.setItem(PC_STATUS_FILTER_KEY_V2, pcStatusFilter);
+        localStorage.setItem(PC_SHOW_SOLD_ONLY_KEY, showSoldOnly ? "1" : "0");
+        renderSavedBuilds();
+    };
+
+    window.setPcSortMode = function(value){
+        pcSortMode = value || "updated_desc";
+        localStorage.setItem(PC_SORT_KEY_V2, pcSortMode);
+        renderSavedBuilds();
+    };
+
+    window.getBuildTotal = function(build){
+        return normalizeComponentsPlus(build && build.components).reduce((sum,item)=>sum + ((Number(item.price) || 0) * (Number(item.qty) || 1)), 0);
+    };
+
+    window.getTotalBuy = function(){
+        return normalizeComponentsPlus(data).reduce((sum,item)=>sum + ((Number(item.price) || 0) * (Number(item.qty) || 1)), 0);
+    };
+
+    window.createBuild = function(name, components, salePrice, sold = false, soldAt = ""){
+        const now = new Date().toISOString();
+        const status = sold ? "sold" : "work";
+        const build = {
+            id:makeId(),
+            name:name || getNextPCName(),
+            components:normalizeComponentsPlus(components),
+            salePrice:Number(salePrice) || 0,
+            status,
+            sold:status === "sold",
+            soldAt:status === "sold" ? (normalizeDateInput(soldAt) || todayISODate()) : "",
+            createdAt:now,
+            updatedAt:now
+        };
+        return build;
+    };
+
+    window.autosaveActiveBuild = function(){
+        if(!activeBuildId) return;
+        const build = getBuildById(activeBuildId);
+        if(!build) return;
+        build.components = normalizeComponentsPlus(data);
+        build.salePrice = getSalePrice();
+        syncStatus(build);
+        build.updatedAt = new Date().toISOString();
+        persistBuilds();
+        renderSavedBuilds();
+        renderChart();
+        renderMonthlyStats();
+        renderBusinessSummary();
+        updateActivePcLabel();
+    };
+
+    window.applyBuildToCurrent = function(build){
+        data = normalizeComponentsPlus(build.components);
+        document.getElementById("salePrice").value = Number(build.salePrice) || "";
+        localStorage.setItem(LEGACY_COMPONENTS_KEY, JSON.stringify(data));
+        localStorage.setItem(LEGACY_SALE_KEY, document.getElementById("salePrice").value || "");
+    };
+
+    window.updateSelectedText = function(){
+        const box = document.getElementById("selectedName");
+        if(!box) return;
+        if(!selectedComp){
+            box.textContent = "Nu este selectată nicio componentă.";
+            return;
+        }
+        const stock = findInventoryForComponent(selectedCat, selectedComp.name);
+        const socketText = selectedComp.socket ? ` <span class="socket-pill">${escapeHTML(selectedComp.socket)}</span>` : "";
+        const stockText = stock ? ` <span class="stock-pill">În stoc: ${formatMoney(stock.qty)} buc. · ${formatMoney(stock.price)} lei</span>` : "";
+        box.innerHTML = `<strong>${escapeHTML(selectedCat)}</strong> - ${escapeHTML(selectedComp.name)}${socketText}${stockText}`;
+    };
+
+    window.addComponent = function(){
+        if(!selectedCat || !selectedComp){
+            alert("Selectează mai întâi componenta.");
+            return;
+        }
+        const priceInput = document.getElementById("buyPrice");
+        const hasManualPrice = String(priceInput.value || "").trim() !== "";
+        let price = Number(priceInput.value);
+        const stockItem = findInventoryForComponent(selectedCat, selectedComp.name);
+        let source = "manual";
+        let inventoryId = "";
+
+        if(stockItem){
+            if(!hasManualPrice){
+                price = Number(stockItem.price) || 0;
+            }
+            if(!deductFromInventory(stockItem, 1)){
+                alert("Componenta există în stoc, dar cantitatea nu este suficientă.");
+                return;
+            }
+            source = "stoc";
+            inventoryId = stockItem.id;
+        }
+
+        if(!Number.isFinite(price) || price < 0){
+            alert(stockItem ? "Prețul din stoc nu este valid. Corectează prețul din stoc sau introdu preț manual." : "Introdu prețul de cumpărare corect.");
+            return;
+        }
+
+        data.push({cat:selectedCat, name:selectedComp.name, socket:selectedComp.socket || "", price, qty:1, inventoryId, source});
+        save();
+        priceInput.value = "";
+        render();
+    };
+
+    window.updateComponentField = function(index, field, value){
+        if(!data[index]) return;
+        const item = data[index];
+        if(field === "price"){
+            const price = Number(value);
+            item.price = Number.isFinite(price) && price >= 0 ? price : 0;
+        }else if(field === "qty"){
+            const oldQty = Math.max(1, Number(item.qty) || 1);
+            const newQty = Math.max(1, Number(value) || 1);
+            const delta = newQty - oldQty;
+            if(delta > 0 && item.inventoryId){
+                const invItem = findInventoryById(item.inventoryId);
+                if(!invItem || (Number(invItem.qty) || 0) < delta){
+                    alert("Nu există cantitate suficientă în stoc pentru această modificare.");
+                    render();
+                    return;
+                }
+                invItem.qty -= delta;
+                persistInventory();
+                renderInventory();
+            }else if(delta < 0 && item.inventoryId){
+                returnToInventory(item, Math.abs(delta));
+            }
+            item.qty = newQty;
+        }else if(field === "cat"){
+            item.cat = String(value || "").trim() || item.cat;
+        }else if(field === "name"){
+            item.name = String(value || "").trim() || item.name;
+        }else if(field === "socket"){
+            item.socket = String(value || "").trim();
+        }
+        data = normalizeComponentsPlus(data);
+        save();
+        render();
+    };
+
+    window.updatePrice = function(index, value){
+        updateComponentField(index, "price", value);
+    };
+
+    window.deleteComponent = function(index){
+        const item = data[index];
+        if(item) returnToInventory(item, item.qty);
+        data.splice(index,1);
+        save();
+        render();
+    };
+
+    window.setMargin = function(percent){
+        const total = getTotalBuy();
+        if(total <= 0){
+            alert("Adaugă componentele înainte de a seta adaosul.");
+            return;
+        }
+        document.getElementById("salePrice").value = Math.round(total * (1 + percent / 100));
+        saveSalePrice();
+        render();
+    };
+
+    window.setRecommendedPrice = function(percent){
+        setMargin(percent);
+    };
+
+    window.toggleSoldStatus = function(id){
+        const build = getBuildById(id);
+        if(!build) return;
+        const current = getBuildStatusPlus(build);
+        build.status = current === "sold" ? "work" : "sold";
+        build.sold = build.status === "sold";
+        build.soldAt = build.sold ? (normalizeDateInput(build.soldAt) || todayISODate()) : "";
+        build.updatedAt = new Date().toISOString();
+        persistBuilds();
+        renderSavedBuilds();
+        renderChart();
+        renderMonthlyStats();
+        renderBusinessSummary();
+    };
+
+    window.updateBuildStatus = function(id, value){
+        const build = getBuildById(id);
+        if(!build) return;
+        build.status = ["work","ready","sold"].includes(value) ? value : "work";
+        build.sold = build.status === "sold";
+        build.soldAt = build.sold ? (normalizeDateInput(build.soldAt) || todayISODate()) : "";
+        build.updatedAt = new Date().toISOString();
+        persistBuilds();
+        renderSavedBuilds();
+        renderChart();
+        renderMonthlyStats();
+        renderBusinessSummary();
+    };
+
+    window.updateSoldDate = function(id, value){
+        const build = getBuildById(id);
+        if(!build) return;
+        build.soldAt = normalizeDateInput(value) || todayISODate();
+        build.status = "sold";
+        build.sold = true;
+        build.updatedAt = new Date().toISOString();
+        persistBuilds();
+        renderSavedBuilds();
+        renderChart();
+        renderMonthlyStats();
+        renderBusinessSummary();
+    };
+
+    window.toggleSoldOnly = function(checked){
+        showSoldOnly = Boolean(checked);
+        pcStatusFilter = showSoldOnly ? "sold" : "unsold";
+        localStorage.setItem(PC_SHOW_SOLD_ONLY_KEY, showSoldOnly ? "1" : "0");
+        localStorage.setItem(PC_STATUS_FILTER_KEY_V2, pcStatusFilter);
+        renderSavedBuilds();
+    };
+
+    window.getVisibleBuilds = function(){
+        const search = (document.getElementById("pcSearchInput")?.value || pcSearchText || "").trim().toLowerCase();
+        let list = builds.map(syncStatus);
+        if(pcStatusFilter === "sold") list = list.filter(isBuildSoldPlus);
+        else if(pcStatusFilter === "work") list = list.filter(b=>getBuildStatusPlus(b) === "work");
+        else if(pcStatusFilter === "ready") list = list.filter(b=>getBuildStatusPlus(b) === "ready");
+        else if(pcStatusFilter === "unsold") list = list.filter(b=>!isBuildSoldPlus(b));
+        if(search){
+            list = list.filter(b => String(b.name || "").toLowerCase().includes(search));
+        }
+        list.sort((a,b)=>{
+            if(pcSortMode === "name_asc") return String(a.name).localeCompare(String(b.name), "ro");
+            if(pcSortMode === "cost_desc") return getBuildTotal(b) - getBuildTotal(a);
+            if(pcSortMode === "profit_desc") return ((Number(b.salePrice)||0)-getBuildTotal(b)) - ((Number(a.salePrice)||0)-getBuildTotal(a));
+            if(pcSortMode === "sale_desc") return (Number(b.salePrice)||0) - (Number(a.salePrice)||0);
+            return String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || ""));
+        });
+        return list;
+    };
+
+    window.updatePcListControls = function(){
+        const list = document.getElementById("pcList");
+        const btn = document.getElementById("togglePcListBtn");
+        const checkbox = document.getElementById("showSoldOnly");
+        const note = document.getElementById("pcFilterNote");
+        const filter = document.getElementById("pcStatusFilter");
+        const sort = document.getElementById("pcSortMode");
+        if(list) list.style.display = pcListHidden ? "none" : "grid";
+        if(btn){
+            btn.textContent = pcListHidden ? "Afișează lista" : "Ascunde lista";
+            btn.className = pcListHidden ? "btn btn-blue btn-small" : "btn btn-secondary btn-small";
+        }
+        if(checkbox) checkbox.checked = pcStatusFilter === "sold";
+        if(filter) filter.value = pcStatusFilter;
+        if(sort) sort.value = pcSortMode;
+        if(note){
+            const work = builds.filter(b=>getBuildStatusPlus(b)==="work").length;
+            const ready = builds.filter(b=>getBuildStatusPlus(b)==="ready").length;
+            const sold = builds.filter(isBuildSoldPlus).length;
+            note.textContent = `În lucru: ${work} · Gata: ${ready} · Vândute: ${sold}`;
+        }
+    };
+
+    window.renderSavedBuilds = function(){
+        const holder = document.getElementById("pcList");
+        const count = document.getElementById("savedCount");
+        if(!holder || !count) return;
+        builds = builds.map(syncStatus);
+        const visibleBuilds = getVisibleBuilds();
+        const soldCount = builds.filter(isBuildSoldPlus).length;
+        const readyCount = builds.filter(b=>getBuildStatusPlus(b)==="ready").length;
+        const workCount = builds.filter(b=>getBuildStatusPlus(b)==="work").length;
+        count.textContent = `${workCount} lucru / ${readyCount} gata / ${soldCount} vândute`;
+        holder.innerHTML = "";
+
+        if(builds.length === 0){
+            holder.innerHTML = '<div class="empty">Lista este goală. Apasă „Adaugă” pentru PC1.</div>';
+            updateActivePcLabel(); updatePcListControls(); return;
+        }
+        if(visibleBuilds.length === 0){
+            holder.innerHTML = '<div class="empty">Nu există calculatoare pentru filtrul ales.</div>';
+            updateActivePcLabel(); updatePcListControls(); return;
+        }
+
+        visibleBuilds.forEach(build=>{
+            const components = normalizeComponentsPlus(build.components);
+            const total = getBuildTotal(build);
+            const sale = Number(build.salePrice) || 0;
+            const profit = sale - total;
+            const status = getBuildStatusPlus(build);
+            const sold = status === "sold";
+            const row = document.createElement("div");
+            row.className = "pc-row" + (build.id === activeBuildId ? " active" : "");
+            const isExpanded = expandedBuildIds.has(build.id);
+            const componentRows = components.length ? components.map((item,index)=>{
+                const qty = Number(item.qty) || 1;
+                const lineTotal = (Number(item.price)||0) * qty;
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${escapeHTML(item.cat || "-")}</td>
+                        <td>${escapeHTML(item.name || "-")}${item.source === "stoc" ? '<span class="source-pill">Stoc</span>' : ""}</td>
+                        <td>${item.socket ? `<span class="socket-pill">${escapeHTML(item.socket)}</span>` : "-"}</td>
+                        <td>${formatMoney(item.price)} lei</td>
+                        <td>${qty}</td>
+                        <td><b>${formatMoney(lineTotal)}</b> lei</td>
+                    </tr>`;
+            }).join("") : '<tr><td colspan="7" class="table-empty">Acest PC nu are componente salvate.</td></tr>';
+
+            row.innerHTML = `
+                <div class="pc-info">
+                    <input class="pc-name-input" value="${escapeHTML(build.name)}" oninput="renameBuild('${build.id}', this.value)">
+                    <div class="pc-meta">
+                        <span class="status-pill ${STATUS_CLASSES[status] || "status-unsold"}">${STATUS_LABELS[status] || "În lucru"}</span>
+                        ${components.length} poziții · Investit ${formatMoney(total)} lei · Vânzare ${formatMoney(sale)} lei · Profit ${formatMoney(profit)} lei
+                        ${sold ? `<div class="sold-date-line">Data vânzării: <input class="sold-date-input" type="date" value="${escapeHTML(getBuildSoldDate(build))}" onchange="updateSoldDate('${build.id}', this.value)"></div>` : ""}
+                    </div>
+                </div>
+                <div class="pc-actions">
+                    <button class="btn btn-blue btn-small" onclick="loadSavedPC('${build.id}')">Deschide</button>
+                    <select class="status-select" onchange="updateBuildStatus('${build.id}', this.value)">
+                        <option value="work" ${status === "work" ? "selected" : ""}>În lucru</option>
+                        <option value="ready" ${status === "ready" ? "selected" : ""}>Gata</option>
+                        <option value="sold" ${status === "sold" ? "selected" : ""}>Vândut</option>
+                    </select>
+                    <button class="btn btn-secondary btn-small" onclick="toggleBuildDetails('${build.id}')">${isExpanded ? "Ascunde" : "Componente"}</button>
+                    <button class="btn btn-red btn-small" onclick="deleteBuild('${build.id}')">Șterge</button>
+                </div>
+                ${isExpanded ? `
+                <div class="pc-components-details">
+                    <div class="pc-components-head"><strong>Componentele din ${escapeHTML(build.name)}</strong><span>${components.length} poziții</span></div>
+                    <div class="pc-components-table-wrap">
+                        <table><thead><tr><th>Nr</th><th>Categorie</th><th>Componentă</th><th>Socket</th><th>Preț/buc.</th><th>Cant.</th><th>Total</th></tr></thead><tbody>${componentRows}</tbody></table>
+                    </div>
+                    <div class="pc-components-total">Total componente: ${formatMoney(total)} lei</div>
+                </div>` : ""}`;
+            holder.appendChild(row);
+        });
+        updateActivePcLabel();
+        updatePcListControls();
+    };
+
+    window.renderRecommendations = function(){
+        const holder = document.getElementById("priceRecommendations");
+        if(!holder) return;
+        const total = getTotalBuy();
+        if(total <= 0){
+            holder.innerHTML = "";
+            return;
+        }
+        const items = [0,10,20,30].map(percent=>{
+            const price = Math.round(total * (1 + percent / 100));
+            const label = percent === 0 ? "Minim fără pierdere" : `Adaos +${percent}%`;
+            const profit = price - total;
+            return `<button class="rec-btn" type="button" onclick="setRecommendedPrice(${percent})"><strong>${label}</strong><span>${formatMoney(price)} lei · profit ${formatMoney(profit)} lei</span></button>`;
+        });
+        holder.innerHTML = items.join("");
+    };
+
+    window.renderWarnings = function(){
+        const holder = document.getElementById("appWarnings");
+        if(!holder) return;
+        const messages = [];
+        const total = getTotalBuy();
+        const sale = getSalePrice();
+        if(data.length > 0 && sale <= 0) messages.push({type:"bad", text:"Nu ai introdus prețul de vânzare pentru PC-ul curent."});
+        if(sale > 0 && total > 0 && sale < total) messages.push({type:"bad", text:`Prețul de vânzare este mai mic decât investiția. Pierdere: ${formatMoney(total - sale)} lei.`});
+        const zeroPrices = data.filter(x => (Number(x.price) || 0) <= 0).length;
+        if(zeroPrices) messages.push({type:"bad", text:`Ai ${zeroPrices} componentă/e cu preț 0 lei.`});
+        const cpus = data.filter(x=>x.cat === "CPU");
+        const boards = data.filter(x=>x.cat === "MB");
+        if(cpus[0] && boards[0] && cpus[0].socket && boards[0].socket && cpus[0].socket !== boards[0].socket){
+            messages.push({type:"bad", text:`CPU și placa de bază au socket diferit: ${cpus[0].socket} / ${boards[0].socket}.`});
+        }
+        if(messages.length === 0 && data.length > 0){
+            messages.push({type:"ok", text:"Configurația nu are avertizări importante."});
+        }
+        holder.innerHTML = messages.map(m=>`<div class="warning-item ${m.type}">${escapeHTML(m.text)}</div>`).join("");
+    };
+
+    window.renderBusinessSummary = function(){
+        const holder = document.getElementById("businessSummary");
+        const badge = document.getElementById("businessSummaryBadge");
+        if(!holder) return;
+        const work = builds.filter(b=>getBuildStatusPlus(b)==="work");
+        const ready = builds.filter(b=>getBuildStatusPlus(b)==="ready");
+        const sold = builds.filter(isBuildSoldPlus);
+        const active = builds.filter(b=>!isBuildSoldPlus(b));
+        const activeInvestment = active.reduce((sum,b)=>sum + getBuildTotal(b), 0);
+        const stockValue = inventory.reduce((sum,item)=>sum + ((Number(item.price)||0) * (Number(item.qty)||0)), 0);
+        const soldRevenue = sold.reduce((sum,b)=>sum + (Number(b.salePrice)||0), 0);
+        const soldProfit = sold.reduce((sum,b)=>sum + ((Number(b.salePrice)||0) - getBuildTotal(b)), 0);
+        if(badge) badge.textContent = `${builds.length} PC-uri · ${inventory.length} stoc`;
+        holder.innerHTML = `
+            <div class="business-stat"><div class="label">În lucru</div><div class="value">${work.length}</div></div>
+            <div class="business-stat"><div class="label">Gata de vânzare</div><div class="value">${ready.length}</div></div>
+            <div class="business-stat"><div class="label">Investiție activă</div><div class="value">${formatMoney(activeInvestment)} lei</div></div>
+            <div class="business-stat"><div class="label">Valoare stoc</div><div class="value">${formatMoney(stockValue)} lei</div></div>
+            <div class="business-stat"><div class="label">PC-uri vândute</div><div class="value">${sold.length}</div></div>
+            <div class="business-stat"><div class="label">Vânzări realizate</div><div class="value">${formatMoney(soldRevenue)} lei</div></div>
+            <div class="business-stat profit ${soldProfit > 0 ? "positive" : soldProfit < 0 ? "negative" : ""}"><div class="label">Profit realizat</div><div class="value">${formatMoney(soldProfit)} lei</div></div>
+            <div class="business-stat"><div class="label">Total business</div><div class="value">${formatMoney(activeInvestment + stockValue)} lei</div></div>`;
+    };
+
+    window.render = function(){
+        const list = document.getElementById("list");
+        if(!list) return;
+        data = normalizeComponentsPlus(data);
+        list.innerHTML = "";
+        if(data.length === 0){
+            list.innerHTML = '<tr><td colspan="7" class="table-empty">Nu ai adăugat încă nicio componentă.</td></tr>';
+        }else{
+            data.forEach((item,index)=>{
+                const qty = Number(item.qty) || 1;
+                const lineTotal = (Number(item.price)||0) * qty;
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>
+                        <select onchange="updateComponentField(${index}, 'cat', this.value)">
+                            ${Object.keys(DB).map(cat=>`<option value="${escapeHTML(cat)}" ${cat === item.cat ? "selected" : ""}>${escapeHTML(cat)}</option>`).join("")}
+                        </select>
+                    </td>
+                    <td><input value="${escapeHTML(item.name)}" oninput="updateComponentField(${index}, 'name', this.value)">${item.source === "stoc" ? '<span class="source-pill">Stoc</span>' : ""}</td>
+                    <td><input value="${escapeHTML(item.socket || "")}" placeholder="Socket" oninput="updateComponentField(${index}, 'socket', this.value)"></td>
+                    <td><input class="price-input" type="number" min="0" step="1" value="${Number(item.price) || 0}" oninput="updateComponentField(${index}, 'price', this.value)"> lei</td>
+                    <td><input class="qty-input" type="number" min="1" step="1" value="${qty}" onchange="updateComponentField(${index}, 'qty', this.value)"></td>
+                    <td><b>${formatMoney(lineTotal)} lei</b></td>
+                    <td><button class="del-btn" onclick="deleteComponent(${index})">X</button></td>`;
+                list.appendChild(tr);
+            });
+        }
+        document.getElementById("itemsCount").textContent = data.length === 1 ? "1 poziție" : `${data.length} poziții`;
+        updateCurrentComponentsListControls();
+        renderTotalsOnly();
+        renderSavedBuilds();
+        renderChart();
+        renderMonthlyStats();
+        renderInventory();
+        renderBusinessSummary();
+    };
+
+    const oldRenderTotalsOnly = window.renderTotalsOnly || renderTotalsOnly;
+    window.renderTotalsOnly = function(){
+        oldRenderTotalsOnly();
+        renderRecommendations();
+        renderWarnings();
+    };
+
+    window.addInventoryItem = function(){
+        const cat = document.getElementById("inventoryCategory").value;
+        const name = document.getElementById("inventoryName").value.trim();
+        const price = Number(document.getElementById("inventoryPrice").value);
+        const qty = Number(document.getElementById("inventoryQty").value);
+        if(!cat || !name){ alert("Alege categoria și scrie denumirea componentei."); return; }
+        if(!Number.isFinite(price) || price < 0){ alert("Introdu prețul corect."); return; }
+        if(!Number.isFinite(qty) || qty <= 0){ alert("Introdu cantitatea corectă."); return; }
+        const existing = inventory.find(item=>componentKey(item.cat, item.name) === componentKey(cat, name) && Number(item.price) === price);
+        if(existing){ existing.qty = (Number(existing.qty)||0) + qty; }
+        else{ inventory.push({id:makeInventoryId(), cat, name, price, qty}); }
+        inventory = normalizeInventoryPlus(inventory);
+        persistInventory();
+        document.getElementById("inventoryName").value = "";
+        document.getElementById("inventoryPrice").value = "";
+        document.getElementById("inventoryQty").value = "1";
+        renderInventory();
+        updateSelectedText();
+        renderBusinessSummary();
+    };
+
+    window.updateInventoryField = function(index, field, value){
+        if(!inventory[index]) return;
+        if(field === "price"){
+            const price = Number(value);
+            inventory[index].price = Number.isFinite(price) && price >= 0 ? price : 0;
+        }else if(field === "qty"){
+            const qty = Number(value);
+            inventory[index].qty = Number.isFinite(qty) && qty >= 0 ? qty : 0;
+        }else if(field === "cat") inventory[index].cat = String(value || "").trim();
+        else if(field === "name") inventory[index].name = String(value || "").trim();
+        inventory = normalizeInventoryPlus(inventory);
+        persistInventory();
+        renderInventoryTotals();
+        renderBusinessSummary();
+    };
+
+    window.deleteInventoryItem = function(index){
+        if(!confirm("Ștergi componenta din stoc?")) return;
+        inventory.splice(index, 1);
+        persistInventory();
+        renderInventory();
+        renderBusinessSummary();
+    };
+
+    window.resetInventory = function(){
+        if(!confirm("Ștergi toate componentele din stoc?")) return;
+        inventory = [];
+        persistInventory();
+        renderInventory();
+        renderBusinessSummary();
+    };
+
+    window.renderInventoryTotals = function(){
+        const holder = document.getElementById("inventoryTotals");
+        const count = document.getElementById("inventoryCount");
+        if(!holder || !count) return;
+        inventory = normalizeInventoryPlus(inventory);
+        const positions = inventory.length;
+        const totalQty = inventory.reduce((sum,item)=>sum + (Number(item.qty) || 0), 0);
+        const totalValue = inventory.reduce((sum,item)=>sum + ((Number(item.price) || 0) * (Number(item.qty) || 0)), 0);
+        const lowStock = inventory.filter(item => (Number(item.qty) || 0) <= 1).length;
+        count.textContent = positions === 1 ? "1 poziție" : `${positions} poziții`;
+        holder.innerHTML = `
+            <div class="inventory-stat"><div class="label">Poziții în stoc</div><div class="value">${formatMoney(positions)}</div></div>
+            <div class="inventory-stat"><div class="label">Cantitate</div><div class="value">${formatMoney(totalQty)}</div></div>
+            <div class="inventory-stat"><div class="label">Valoare</div><div class="value">${formatMoney(totalValue)} lei</div></div>
+            <div class="inventory-stat"><div class="label">Stoc scăzut</div><div class="value">${formatMoney(lowStock)}</div></div>`;
+    };
+
+    window.renderInventory = function(){
+        const list = document.getElementById("inventoryList");
+        if(!list) return;
+        inventory = normalizeInventoryPlus(inventory);
+        list.innerHTML = "";
+        if(inventory.length === 0){
+            list.innerHTML = '<tr><td colspan="6" class="table-empty">Nu ai introdus componente în stoc.</td></tr>';
+            renderInventoryTotals(); updateInventoryListControls(); return;
+        }
+        inventory.forEach((item,index)=>{
+            const total = (Number(item.price)||0) * (Number(item.qty)||0);
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><select onchange="updateInventoryField(${index}, 'cat', this.value)">${Object.keys(DB).map(cat=>`<option value="${escapeHTML(cat)}" ${cat === item.cat ? "selected" : ""}>${escapeHTML(cat)}</option>`).join("")}</select></td>
+                <td><input value="${escapeHTML(item.name)}" oninput="updateInventoryField(${index}, 'name', this.value)"></td>
+                <td><input class="inventory-price-input" type="number" min="0" step="1" value="${Number(item.price) || 0}" oninput="updateInventoryField(${index}, 'price', this.value)"> lei</td>
+                <td><input class="qty-input" type="number" min="0" step="1" value="${Number(item.qty) || 0}" oninput="updateInventoryField(${index}, 'qty', this.value)"></td>
+                <td><b>${formatMoney(total)} lei</b></td>
+                <td><button class="del-btn" onclick="deleteInventoryItem(${index})">X</button></td>`;
+            list.appendChild(tr);
+        });
+        renderInventoryTotals(); updateInventoryListControls(); renderBusinessSummary();
+    };
+
+    window.getSoldSalesData = function(){
+        return builds.map(syncStatus)
+            .filter(isBuildSoldPlus)
+            .map(build=>{
+                const cost = getBuildTotal(build);
+                const sale = Number(build.salePrice) || 0;
+                const soldAt = getBuildSoldDate(build);
+                const monthKey = monthKeyFromDate(soldAt);
+                return {id:build.id, name:build.name || "PC", soldAt, monthKey, monthLabel:monthLabelFromKey(monthKey), cost, sale, profit:sale - cost};
+            })
+            .filter(item=>item.monthKey)
+            .sort((a,b)=>a.soldAt.localeCompare(b.soldAt));
+    };
+
+    const oldUpdateChartTotals = window.updateChartTotals || updateChartTotals;
+    window.updateChartTotals = function(chartData){
+        oldUpdateChartTotals(chartData);
+        renderBusinessSummary();
+    };
+
+    window.createInventorySheetRows = function(){
+        return normalizeInventoryPlus(inventory).map((item,index)=>({
+            "Nr": index + 1,
+            "ID stoc": item.id,
+            "Categorie": item.cat,
+            "Componentă": item.name,
+            "Preț bucata lei": Number(item.price) || 0,
+            "Cantitate": Number(item.qty) || 0,
+            "Total lei": (Number(item.price) || 0) * (Number(item.qty) || 0)
+        }));
+    };
+
+    window.createBuildSheetRows = function(build){
+        const components = normalizeComponentsPlus(build.components || []);
+        const totalBuy = getBuildTotal(build);
+        const sale = Number(build.salePrice) || 0;
+        const profit = sale - totalBuy;
+        const margin = totalBuy > 0 ? (profit / totalBuy) * 100 : 0;
+        const rows = [];
+        if(components.length === 0){
+            rows.push({"Nume PC":build.name,"Status":STATUS_LABELS[getBuildStatusPlus(build)] || "În lucru","Data vânzării":isBuildSoldPlus(build) ? getBuildSoldDate(build) : "","Nr componentă":"","Categorie":"","Componentă":"","Socket":"","Preț bucata lei":"","Cantitate":"","Total linie lei":"","Investit total lei":totalBuy,"Preț vânzare PC lei":sale,"Profit lei":profit,"Adaos %":Number.isFinite(margin) ? Number(margin.toFixed(1)) : 0});
+            return rows;
+        }
+        components.forEach((item,componentIndex)=>{
+            const qty = Number(item.qty) || 1;
+            rows.push({
+                "Nume PC": build.name,
+                "Status": componentIndex === 0 ? (STATUS_LABELS[getBuildStatusPlus(build)] || "În lucru") : "",
+                "Data vânzării": componentIndex === 0 && isBuildSoldPlus(build) ? getBuildSoldDate(build) : "",
+                "Luna vânzării": componentIndex === 0 && isBuildSoldPlus(build) ? monthLabelFromKey(monthKeyFromDate(getBuildSoldDate(build))) : "",
+                "Nr componentă": componentIndex + 1,
+                "Categorie": item.cat,
+                "Componentă": item.name,
+                "Socket": item.socket || "",
+                "Sursă": item.source === "stoc" ? "Stoc" : "Manual",
+                "Preț bucata lei": Number(item.price) || 0,
+                "Cantitate": qty,
+                "Total linie lei": (Number(item.price)||0) * qty,
+                "Investit total lei": componentIndex === 0 ? totalBuy : "",
+                "Preț vânzare PC lei": componentIndex === 0 ? sale : "",
+                "Profit lei": componentIndex === 0 ? profit : "",
+                "Adaos %": componentIndex === 0 && Number.isFinite(margin) ? Number(margin.toFixed(1)) : ""
+            });
+        });
+        return rows;
+    };
+
+    window.backupJSON = function(){
+        const payload = {
+            app:"PC Builder",
+            version:"plus-1",
+            exportedAt:new Date().toISOString(),
+            builds:builds.map(syncStatus),
+            activeBuildId,
+            current:{components:normalizeComponentsPlus(data), salePrice:getSalePrice()},
+            inventory:normalizeInventoryPlus(inventory),
+            settings:{pcStatusFilter, pcSortMode, pcListHidden, buildChartHidden, monthlyStatsHidden, inventoryListHidden}
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json;charset=utf-8"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "backup_pc_builder_complet.json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    };
+
+    const oldParseImportedJSON = window.parseImportedJSON || parseImportedJSON;
+    window.parseImportedJSON = function(text){
+        const parsed = JSON.parse(text);
+        window.__lastImportedInventory = normalizeInventoryPlus(parsed.inventory || parsed.stoc || []);
+        const rawBuilds = Array.isArray(parsed) ? parsed : (parsed.builds || []);
+        return rawBuilds.map((b,index)=>{
+            const build = createBuild(b.name || `PC${index + 1}`, b.components || b.data || [], b.salePrice || 0, Boolean(b.sold || b.status === "sold"), b.soldAt || b.soldDate || b.saleDate || b["Data vânzării"] || b["Data vanzarii"] || "");
+            build.status = b.status || (build.sold ? "sold" : "work");
+            return syncStatus(build);
+        });
+    };
+
+    const oldParseRowsIntoBuildMap = window.parseRowsIntoBuildMap || parseRowsIntoBuildMap;
+    window.parseRowsIntoBuildMap = function(rows, map, fallbackName){
+        rows.forEach(row=>{
+            const pcName = String(row["Nume PC"] || row["PC"] || row["Calculator"] || fallbackName || "PC importat").trim() || "PC importat";
+            if(!map.has(pcName)) map.set(pcName, {name:pcName, components:[], salePrice:0, sold:false, status:"work", soldAt:""});
+            const build = map.get(pcName);
+            const sale = Number(row["Preț vânzare PC lei"] || row["Pret vanzare PC lei"] || row["Preț vânzare lei"] || 0);
+            if(Number.isFinite(sale) && sale > 0) build.salePrice = sale;
+            const statusText = String(row["Status"] || "").toLowerCase();
+            if(statusText.includes("vând") || statusText.includes("vand") || statusText.includes("sold")) { build.status = "sold"; build.sold = true; }
+            else if(statusText.includes("gata")) build.status = "ready";
+            else if(statusText.includes("lucru")) build.status = "work";
+            const soldDate = normalizeDateInput(row["Data vânzării"] || row["Data vanzarii"] || row["Data vanzare"] || row["Data"] || "");
+            if(soldDate){ build.soldAt = soldDate; build.sold = true; build.status = "sold"; }
+            const cat = String(row["Categorie"] || "").trim();
+            const component = String(row["Componentă"] || row["Componenta"] || "").trim();
+            const socket = String(row["Socket"] || "").trim();
+            const price = Number(row["Preț bucata lei"] || row["Pret bucata lei"] || row["Preț cumpărare lei"] || row["Pret cumparare lei"] || row["Preț"] || row["Pret"] || 0);
+            const qty = Number(row["Cantitate"] || row["Cant."] || 1);
+            if(cat && component) build.components.push({cat, name:component, socket, price:Number.isFinite(price) ? price : 0, qty:Math.max(1, qty || 1), source: String(row["Sursă"] || row["Sursa"] || "").toLowerCase().includes("stoc") ? "stoc" : "manual"});
+        });
+    };
+
+    window.printClientSheet = function(){
+        const build = activeBuildId ? getBuildById(activeBuildId) : null;
+        const name = build ? build.name : "PC curent";
+        const components = normalizeComponentsPlus(data);
+        const total = getTotalBuy();
+        const sale = getSalePrice();
+        const profit = sale - total;
+        if(components.length === 0 && sale <= 0){ alert("Nu există date pentru fișa clientului."); return; }
+        const rows = components.map((item,index)=>{
+            const qty = Number(item.qty)||1;
+            return `<tr><td>${index+1}</td><td>${escapeHTML(item.cat)}</td><td>${escapeHTML(item.name)}</td><td>${escapeHTML(item.socket || "-")}</td><td>${qty}</td></tr>`;
+        }).join("");
+        const w = window.open("", "_blank");
+        if(!w){ alert("Browserul a blocat fereastra de print."); return; }
+        w.document.write(`<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"><title>Fișă client - ${escapeHTML(name)}</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#172033}h1{margin:0 0 5px}.muted{color:#667085}.box{border:1px solid #d9e2ec;border-radius:12px;padding:14px;margin:15px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border-bottom:1px solid #d9e2ec;padding:9px;text-align:left}th{background:#f1f5f9}.total{font-size:22px;font-weight:bold;text-align:right}.footer{margin-top:35px;display:flex;justify-content:space-between}.line{border-top:1px solid #172033;width:220px;text-align:center;padding-top:7px}</style></head><body><h1>Fișă calculator</h1><div class="muted">Data: ${formatDateRo(todayISODate())}</div><div class="box"><b>${escapeHTML(name)}</b><br>Preț final: <b>${formatMoney(sale)} lei</b></div><table><thead><tr><th>Nr</th><th>Categorie</th><th>Componentă</th><th>Socket</th><th>Cant.</th></tr></thead><tbody>${rows || '<tr><td colspan="5">Fără componente.</td></tr>'}</tbody></table><div class="box total">Total client: ${formatMoney(sale)} lei</div><div class="muted">Garanție / observații: ________________________________________________</div><div class="footer"><div class="line">Vânzător</div><div class="line">Client</div></div><script>window.onload=function(){window.print();}</` + `script></body></html>`);
+        w.document.close();
+    };
+
+    const oldRenderCategories = window.renderCategories || renderCategories;
+    window.renderCategories = function(){
+        oldRenderCategories();
+        updateSelectedText();
+    };
+
+    const oldRenderComponents = window.renderComponents || renderComponents;
+    window.renderComponents = function(){
+        oldRenderComponents();
+        updateSelectedText();
+    };
+
+    function initializePlus(){
+        migratePlusData();
+        insertPlusUI();
+        const search = document.getElementById("pcSearchInput");
+        if(search) search.value = pcSearchText;
+        const filter = document.getElementById("pcStatusFilter");
+        if(filter) filter.value = pcStatusFilter;
+        const sort = document.getElementById("pcSortMode");
+        if(sort) sort.value = pcSortMode;
+        try{ renderInventoryCategoryOptions(); }catch(e){}
+        try{ render(); }catch(e){ console.error(e); }
+        try{ renderBusinessSummary(); }catch(e){}
+    }
+
+    if(document.readyState === "loading"){
+        document.addEventListener("DOMContentLoaded", initializePlus);
+    }else{
+        initializePlus();
+    }
+})();
+</script>
+
+
+
+<style id="inventory-sale-addon-styles">
+.btn-sell-stock{background:#16a34a;color:#fff;border:0;border-radius:10px;padding:8px 10px;cursor:pointer;font-weight:bold;font-size:12px;white-space:nowrap;}
+.btn-sell-stock:hover{filter:brightness(.95);}
+.btn-sell-stock:disabled{background:#e5e7eb;color:#667085;cursor:not-allowed;}
+.inventory-sale-input{max-width:120px;padding:8px 9px;font-size:13px;border-radius:10px;}
+.monthly-type-pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:bold;background:#eef4ff;color:#2442a8;white-space:nowrap;}
+.monthly-type-pill.stock{background:#dcfce7;color:#166534;}
+.undo-sale-btn{border:0;background:#fff1f0;color:#b42318;border-radius:10px;padding:7px 9px;cursor:pointer;font-weight:bold;font-size:12px;}
+.inventory-sale-note{display:block;color:#667085;font-size:11px;margin-top:4px;}
+</style>
+<script id="inventory-sale-addon-script">
+(function(){
+    const INVENTORY_SALES_KEY = "pc_builder_inventory_sales_v1";
+    let inventorySales = loadInventorySales();
+    window.inventorySales = inventorySales;
+
+    function makeInventorySaleId(){
+        return "sale_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
+    }
+
+    function normalizeInventorySales(items){
+        if(!Array.isArray(items)) return [];
+        return items.map(x=>{
+            const qty = Math.max(1, Number(x.qty ?? x.quantity ?? x["Cantitate"] ?? 1) || 1);
+            const costUnit = Number(x.costUnit ?? x.buyPrice ?? x.price ?? x["Preț cumpărare bucata lei"] ?? x["Pret cumparare bucata lei"] ?? x["Preț cumpărare lei"] ?? x["Pret cumparare lei"] ?? 0) || 0;
+            const saleUnit = Number(x.saleUnit ?? x.salePriceUnit ?? x.salePrice ?? x["Preț vânzare bucata lei"] ?? x["Pret vanzare bucata lei"] ?? x["Preț vânzare lei"] ?? x["Pret vanzare lei"] ?? 0) || 0;
+            const cost = Number(x.cost ?? x.costTotal ?? x["Investit total lei"] ?? (costUnit * qty)) || 0;
+            const sale = Number(x.sale ?? x.saleTotal ?? x["Vânzare total lei"] ?? x["Vanzare total lei"] ?? (saleUnit * qty)) || 0;
+            const soldAt = normalizeDateInput(x.soldAt || x.soldDate || x.saleDate || x["Data vânzării"] || x["Data vanzarii"] || todayISODate()) || todayISODate();
+            return {
+                id:String(x.id || x.saleId || x["ID vânzare"] || x["ID vanzare"] || makeInventorySaleId()),
+                inventoryId:String(x.inventoryId || x.stocId || x["ID stoc"] || ""),
+                source:"stoc",
+                cat:String(x.cat || x.category || x["Categorie"] || "").trim(),
+                name:String(x.name || x.component || x["Componentă"] || x["Componenta"] || "").trim(),
+                qty,
+                costUnit,
+                saleUnit,
+                cost,
+                sale,
+                profit:Number(x.profit ?? x["Profit lei"] ?? (sale - cost)) || 0,
+                soldAt
+            };
+        }).filter(x=>x.cat && x.name && x.soldAt);
+    }
+
+    function loadInventorySales(){
+        try{
+            return normalizeInventorySales(JSON.parse(localStorage.getItem(INVENTORY_SALES_KEY) || "[]"));
+        }catch(e){
+            return [];
+        }
+    }
+
+    function persistInventorySales(){
+        inventorySales = normalizeInventorySales(inventorySales);
+        window.inventorySales = inventorySales;
+        localStorage.setItem(INVENTORY_SALES_KEY, JSON.stringify(inventorySales));
+    }
+
+    function parsePositiveNumber(value){
+        const nr = Number(String(value || "").replace(",", "."));
+        return Number.isFinite(nr) ? nr : 0;
+    }
+
+    function updateInventorySaleHeader(){
+        const wrap = document.getElementById("inventoryListWrap");
+        if(!wrap) return;
+        const head = wrap.querySelector("thead tr");
+        if(!head) return;
+        if(!head.dataset.saleAddon){
+            head.dataset.saleAddon = "1";
+            head.innerHTML = `
+                <th>Categorie</th>
+                <th>Componentă</th>
+                <th>Preț cump.</th>
+                <th>Cantitate</th>
+                <th>Total stoc</th>
+                <th>Vânzare</th>
+                <th>Șterge</th>`;
+        }
+    }
+
+    window.sellInventoryItem = function(index){
+        inventory = normalizeInventory(inventory);
+        const item = inventory[index];
+        if(!item) return;
+        const stockQty = Number(item.qty) || 0;
+        if(stockQty <= 0){
+            alert("Această componentă nu mai are cantitate în stoc.");
+            return;
+        }
+        const qtyRaw = prompt(`Câte bucăți vinzi din ${item.name}?\nDisponibil: ${stockQty}`, "1");
+        if(qtyRaw === null) return;
+        const qty = Math.floor(parsePositiveNumber(qtyRaw));
+        if(qty <= 0){
+            alert("Introdu o cantitate corectă.");
+            return;
+        }
+        if(qty > stockQty){
+            alert(`Nu ai suficiente bucăți în stoc. Disponibil: ${stockQty}.`);
+            return;
+        }
+        const recommended = Math.max(Number(item.price) || 0, Math.round((Number(item.price) || 0) * 1.2));
+        const saleRaw = prompt("Preț de vânzare pentru o bucată, lei:", String(recommended));
+        if(saleRaw === null) return;
+        const saleUnit = parsePositiveNumber(saleRaw);
+        if(saleUnit <= 0){
+            alert("Introdu prețul de vânzare corect.");
+            return;
+        }
+        const costUnit = Number(item.price) || 0;
+        const cost = costUnit * qty;
+        const sale = saleUnit * qty;
+        const profit = sale - cost;
+        if(profit < 0 && !confirm(`Vânzarea va fi cu pierdere: ${formatMoney(Math.abs(profit))} lei. Continui?`)) return;
+
+        item.qty = stockQty - qty;
+        const soldAt = todayISODate();
+        inventorySales.push({
+            id:makeInventorySaleId(),
+            inventoryId:String(item.id || ""),
+            source:"stoc",
+            cat:item.cat,
+            name:item.name,
+            qty,
+            costUnit,
+            saleUnit,
+            cost,
+            sale,
+            profit,
+            soldAt
+        });
+        persistInventory();
+        persistInventorySales();
+        renderInventory();
+        renderMonthlyStats();
+        if(typeof renderBusinessSummary === "function") renderBusinessSummary();
+        alert(`Vânzare adăugată în statistica lunară.\n${item.name} × ${qty}\nTotal: ${formatMoney(sale)} lei\nProfit: ${formatMoney(profit)} lei`);
+    };
+
+    window.undoInventorySale = function(saleId){
+        const sale = inventorySales.find(x=>String(x.id) === String(saleId));
+        if(!sale) return;
+        if(!confirm(`Anulezi vânzarea pentru ${sale.name} × ${sale.qty}? Componenta va reveni în stoc.`)) return;
+        const existing = inventory.find(item => String(item.id) === String(sale.inventoryId))
+            || inventory.find(item => String(item.cat).toLowerCase() === String(sale.cat).toLowerCase() && String(item.name).toLowerCase() === String(sale.name).toLowerCase() && Number(item.price) === Number(sale.costUnit));
+        if(existing){
+            existing.qty = (Number(existing.qty) || 0) + (Number(sale.qty) || 1);
+        }else{
+            inventory.push({id:sale.inventoryId || ("inv_" + Date.now()), cat:sale.cat, name:sale.name, price:Number(sale.costUnit)||0, qty:Number(sale.qty)||1});
+        }
+        inventorySales = inventorySales.filter(x=>String(x.id) !== String(saleId));
+        persistInventory();
+        persistInventorySales();
+        renderInventory();
+        renderMonthlyStats();
+        if(typeof renderBusinessSummary === "function") renderBusinessSummary();
+    };
+
+    window.renderInventory = function(){
+        const list = document.getElementById("inventoryList");
+        if(!list) return;
+        updateInventorySaleHeader();
+        inventory = normalizeInventory(inventory);
+        list.innerHTML = "";
+        if(inventory.length === 0){
+            list.innerHTML = '<tr><td colspan="7" class="table-empty">Nu ai introdus componente în stoc.</td></tr>';
+            renderInventoryTotals();
+            updateInventoryListControls();
+            return;
+        }
+        inventory.forEach((item,index)=>{
+            const qty = Number(item.qty) || 0;
+            const total = (Number(item.price)||0) * qty;
+            const saleDefault = Math.round((Number(item.price)||0) * 1.2);
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><select onchange="updateInventoryField(${index}, 'cat', this.value)">${Object.keys(DB).map(cat=>`<option value="${escapeHTML(cat)}" ${cat === item.cat ? "selected" : ""}>${escapeHTML(cat)}</option>`).join("")}</select></td>
+                <td><input value="${escapeHTML(item.name)}" oninput="updateInventoryField(${index}, 'name', this.value)"></td>
+                <td><input class="inventory-price-input" type="number" min="0" step="1" value="${Number(item.price) || 0}" oninput="updateInventoryField(${index}, 'price', this.value)"> lei</td>
+                <td><input class="qty-input" type="number" min="0" step="1" value="${qty}" oninput="updateInventoryField(${index}, 'qty', this.value)"></td>
+                <td><b>${formatMoney(total)} lei</b></td>
+                <td>
+                    <button class="btn-sell-stock" onclick="sellInventoryItem(${index})" ${qty <= 0 ? "disabled" : ""}>Vinde</button>
+                    <span class="inventory-sale-note">sugerat: ${formatMoney(saleDefault)} lei/buc.</span>
+                </td>
+                <td><button class="del-btn" onclick="deleteInventoryItem(${index})">X</button></td>`;
+            list.appendChild(tr);
+        });
+        renderInventoryTotals();
+        updateInventoryListControls();
+        if(typeof renderBusinessSummary === "function") renderBusinessSummary();
+    };
+
+    window.renderInventoryTotals = function(){
+        const holder = document.getElementById("inventoryTotals");
+        const count = document.getElementById("inventoryCount");
+        if(!holder || !count) return;
+        inventory = normalizeInventory(inventory);
+        inventorySales = normalizeInventorySales(inventorySales);
+        const positions = inventory.length;
+        const totalQty = inventory.reduce((sum,item)=>sum + (Number(item.qty) || 0), 0);
+        const totalValue = inventory.reduce((sum,item)=>sum + ((Number(item.price) || 0) * (Number(item.qty) || 0)), 0);
+        const soldQty = inventorySales.reduce((sum,item)=>sum + (Number(item.qty) || 0), 0);
+        const stockProfit = inventorySales.reduce((sum,item)=>sum + (Number(item.profit) || 0), 0);
+        const lowStock = inventory.filter(item => (Number(item.qty) || 0) <= 1).length;
+        count.textContent = positions === 1 ? "1 poziție" : `${positions} poziții`;
+        holder.innerHTML = `
+            <div class="inventory-stat"><div class="label">Poziții în stoc</div><div class="value">${formatMoney(positions)}</div></div>
+            <div class="inventory-stat"><div class="label">Cantitate</div><div class="value">${formatMoney(totalQty)}</div></div>
+            <div class="inventory-stat"><div class="label">Valoare stoc</div><div class="value">${formatMoney(totalValue)} lei</div></div>
+            <div class="inventory-stat"><div class="label">Stoc scăzut</div><div class="value">${formatMoney(lowStock)}</div></div>
+            <div class="inventory-stat"><div class="label">Vândute din stoc</div><div class="value">${formatMoney(soldQty)}</div></div>
+            <div class="inventory-stat profit ${stockProfit > 0 ? "positive" : stockProfit < 0 ? "negative" : ""}"><div class="label">Profit stoc</div><div class="value">${formatMoney(stockProfit)} lei</div></div>`;
+    };
+
+    function getPcSalesData(){
+        return builds.map(typeof syncStatus === "function" ? syncStatus : (x=>x))
+            .filter(build => Boolean(build && (build.sold || build.status === "sold")))
+            .map(build=>{
+                const cost = getBuildTotal(build);
+                const sale = Number(build.salePrice) || 0;
+                const soldAt = getBuildSoldDate(build);
+                const monthKey = monthKeyFromDate(soldAt);
+                return {
+                    id:build.id,
+                    source:"pc",
+                    typeLabel:"PC",
+                    name:build.name || "PC",
+                    soldAt,
+                    monthKey,
+                    monthLabel:monthLabelFromKey(monthKey),
+                    qty:1,
+                    cost,
+                    sale,
+                    profit:sale - cost
+                };
+            })
+            .filter(item=>item.monthKey);
+    }
+
+    function getStockSalesData(){
+        inventorySales = normalizeInventorySales(inventorySales);
+        return inventorySales.map(sale=>{
+            const soldAt = normalizeDateInput(sale.soldAt) || todayISODate();
+            const monthKey = monthKeyFromDate(soldAt);
+            return {
+                id:sale.id,
+                source:"stoc",
+                typeLabel:"Stoc",
+                name:`${sale.cat} ${sale.name} × ${sale.qty}`,
+                soldAt,
+                monthKey,
+                monthLabel:monthLabelFromKey(monthKey),
+                qty:Number(sale.qty) || 1,
+                cost:Number(sale.cost) || 0,
+                sale:Number(sale.sale) || 0,
+                profit:Number(sale.profit) || ((Number(sale.sale) || 0) - (Number(sale.cost) || 0))
+            };
+        }).filter(item=>item.monthKey);
+    }
+
+    window.getSoldSalesData = function(){
+        return [...getPcSalesData(), ...getStockSalesData()]
+            .sort((a,b)=>a.soldAt.localeCompare(b.soldAt) || a.name.localeCompare(b.name, "ro"));
+    };
+
+    window.updateMonthlyTotals = function(sales){
+        const holder = document.getElementById("monthlyTotals");
+        const countBadge = document.getElementById("monthlyCount");
+        if(!holder || !countBadge) return;
+        const totalCount = sales.length;
+        const pcCount = sales.filter(x=>x.source === "pc").length;
+        const stockCount = sales.filter(x=>x.source === "stoc").length;
+        const totalSale = sales.reduce((sum,item)=>sum + item.sale, 0);
+        const totalCost = sales.reduce((sum,item)=>sum + item.cost, 0);
+        const totalProfit = totalSale - totalCost;
+        countBadge.textContent = totalCount === 1 ? "1 vânzare" : `${totalCount} vânzări`;
+        holder.innerHTML = `
+            <div class="monthly-stat"><div class="label">Vânzări totale</div><div class="value">${formatMoney(totalCount)}</div></div>
+            <div class="monthly-stat"><div class="label">PC / Stoc</div><div class="value">${formatMoney(pcCount)} / ${formatMoney(stockCount)}</div></div>
+            <div class="monthly-stat"><div class="label">Vânzări</div><div class="value">${formatMoney(totalSale)} lei</div></div>
+            <div class="monthly-stat"><div class="label">Investit</div><div class="value">${formatMoney(totalCost)} lei</div></div>
+            <div class="monthly-stat profit ${totalProfit > 0 ? "positive" : totalProfit < 0 ? "negative" : ""}"><div class="label">Profit</div><div class="value">${formatMoney(totalProfit)} lei</div></div>`;
+    };
+
+    window.renderMonthlySalesTable = function(sales){
+        const holder = document.getElementById("monthlySalesList");
+        if(!holder) return;
+        const table = holder.closest("table");
+        if(table){
+            const head = table.querySelector("thead tr");
+            if(head && !head.dataset.saleAddon){
+                head.dataset.saleAddon = "1";
+                head.innerHTML = `<th>Tip</th><th>Luna</th><th>Data</th><th>Vânzare</th><th>Preț</th><th>Investit</th><th>Profit</th><th>Acțiuni</th>`;
+            }
+        }
+        if(sales.length === 0){
+            holder.innerHTML = '<tr><td colspan="8" class="table-empty">Nu există încă vânzări. Marchează un PC ca vândut sau vinde o componentă din stoc.</td></tr>';
+            return;
+        }
+        const sorted = [...sales].sort((a,b)=>b.soldAt.localeCompare(a.soldAt) || a.name.localeCompare(b.name, "ro"));
+        holder.innerHTML = sorted.map(item=>`
+            <tr>
+                <td><span class="monthly-type-pill ${item.source === "stoc" ? "stock" : ""}">${escapeHTML(item.typeLabel || (item.source === "stoc" ? "Stoc" : "PC"))}</span></td>
+                <td>${escapeHTML(item.monthLabel)}</td>
+                <td>${escapeHTML(formatDateRo(item.soldAt))}</td>
+                <td><b>${escapeHTML(item.name)}</b></td>
+                <td>${formatMoney(item.sale)} lei</td>
+                <td>${formatMoney(item.cost)} lei</td>
+                <td><b>${formatMoney(item.profit)} lei</b></td>
+                <td>${item.source === "stoc" ? `<button class="undo-sale-btn" onclick="undoInventorySale('${escapeHTML(item.id)}')">Anulează</button>` : "-"}</td>
+            </tr>`).join("");
+    };
+
+    const oldRenderMonthlyChart = window.renderMonthlyChart || renderMonthlyChart;
+    window.renderMonthlyChart = function(months){
+        oldRenderMonthlyChart(months);
+        const canvas = document.getElementById("monthlyChart");
+        if(!canvas) return;
+        const ctx = canvas.getContext("2d");
+        // Textul din partea stângă al graficului original spune „PC”. Suprascriem doar nota vizuală când sunt și vânzări din stoc.
+        // Agregarea lunară deja include ambele tipuri prin getSoldSalesData().
+    };
+
+    window.createMonthlySalesSheetRows = function(){
+        const sales = getSoldSalesData();
+        return sales.map((item,index)=>({
+            "Nr": index + 1,
+            "Tip": item.typeLabel || (item.source === "stoc" ? "Stoc" : "PC"),
+            "Luna": item.monthLabel,
+            "Data vânzării": item.soldAt,
+            "Vânzare": item.name,
+            "Cantitate": item.qty || 1,
+            "Preț vânzare lei": item.sale,
+            "Investit total lei": item.cost,
+            "Profit lei": item.profit
+        }));
+    };
+
+    const oldBusinessSummary = window.renderBusinessSummary;
+    window.renderBusinessSummary = function(){
+        const holder = document.getElementById("businessSummary");
+        const badge = document.getElementById("businessSummaryBadge");
+        if(!holder || !Array.isArray(builds)){
+            if(typeof oldBusinessSummary === "function") oldBusinessSummary();
+            return;
+        }
+        const getStatus = (b)=> b && (b.status === "ready" || b.status === "sold" || b.status === "work") ? b.status : (b && b.sold ? "sold" : "work");
+        const isSold = (b)=>Boolean(b && (b.sold || b.status === "sold"));
+        const work = builds.filter(b=>getStatus(b)==="work");
+        const ready = builds.filter(b=>getStatus(b)==="ready");
+        const sold = builds.filter(isSold);
+        const active = builds.filter(b=>!isSold(b));
+        const activeInvestment = active.reduce((sum,b)=>sum + getBuildTotal(b), 0);
+        const stockValue = inventory.reduce((sum,item)=>sum + ((Number(item.price)||0) * (Number(item.qty)||0)), 0);
+        const pcRevenue = sold.reduce((sum,b)=>sum + (Number(b.salePrice)||0), 0);
+        const pcProfit = sold.reduce((sum,b)=>sum + ((Number(b.salePrice)||0) - getBuildTotal(b)), 0);
+        const stockRevenue = inventorySales.reduce((sum,s)=>sum + (Number(s.sale)||0), 0);
+        const stockProfit = inventorySales.reduce((sum,s)=>sum + (Number(s.profit)||0), 0);
+        const totalRevenue = pcRevenue + stockRevenue;
+        const totalProfit = pcProfit + stockProfit;
+        if(badge) badge.textContent = `${builds.length} PC-uri · ${inventory.length} stoc`;
+        holder.innerHTML = `
+            <div class="business-stat"><div class="label">În lucru</div><div class="value">${work.length}</div></div>
+            <div class="business-stat"><div class="label">Gata de vânzare</div><div class="value">${ready.length}</div></div>
+            <div class="business-stat"><div class="label">Investiție activă</div><div class="value">${formatMoney(activeInvestment)} lei</div></div>
+            <div class="business-stat"><div class="label">Valoare stoc</div><div class="value">${formatMoney(stockValue)} lei</div></div>
+            <div class="business-stat"><div class="label">PC-uri vândute</div><div class="value">${sold.length}</div></div>
+            <div class="business-stat"><div class="label">Vânzări stoc</div><div class="value">${inventorySales.length}</div></div>
+            <div class="business-stat"><div class="label">Vânzări realizate</div><div class="value">${formatMoney(totalRevenue)} lei</div></div>
+            <div class="business-stat profit ${totalProfit > 0 ? "positive" : totalProfit < 0 ? "negative" : ""}"><div class="label">Profit realizat</div><div class="value">${formatMoney(totalProfit)} lei</div></div>`;
+    };
+
+    const oldBackupJSON = window.backupJSON;
+    window.backupJSON = function(){
+        const payload = {
+            app:"PC Builder",
+            version:"plus-2-inventory-sales",
+            exportedAt:new Date().toISOString(),
+            builds:builds,
+            activeBuildId,
+            current:{components:data, salePrice:getSalePrice()},
+            inventory:inventory,
+            inventorySales:inventorySales,
+            settings:{pcListHidden, buildChartHidden, monthlyStatsHidden, inventoryListHidden}
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json;charset=utf-8"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "backup_pc_builder_complet.json";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    };
+
+    const oldParseImportedJSON = window.parseImportedJSON || parseImportedJSON;
+    window.parseImportedJSON = function(text){
+        const parsed = JSON.parse(text);
+        window.__lastImportedInventorySales = normalizeInventorySales(parsed.inventorySales || parsed.sales || parsed.vanzariStoc || []);
+        if(parsed.inventory || parsed.stoc || parsed.builds || Array.isArray(parsed)){
+            return oldParseImportedJSON(text);
+        }
+        return [];
+    };
+
+    const oldImportFile = window.importFile || importFile;
+    window.importFile = function(event){
+        const file = event.target.files && event.target.files[0];
+        if(!file) return;
+        if(!file.name.toLowerCase().endsWith(".json")){
+            oldImportFile(event);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e){
+            try{
+                const parsed = JSON.parse(e.target.result);
+                const importedBuilds = Array.isArray(parsed) ? parsed : (parsed.builds || []);
+                const importedInventory = normalizeInventory(parsed.inventory || parsed.stoc || []);
+                const importedSales = normalizeInventorySales(parsed.inventorySales || parsed.sales || parsed.vanzariStoc || []);
+                const replace = confirm("OK = înlocuiește lista actuală. Cancel = adaugă datele importate la cele existente.");
+                const newBuilds = importedBuilds.map((b,index)=>createBuild(
+                    b.name || `PC${index + 1}`,
+                    b.components || b.data || [],
+                    b.salePrice || 0,
+                    Boolean(b.sold || b.status === "sold"),
+                    b.soldAt || b.soldDate || b.saleDate || b["Data vânzării"] || b["Data vanzarii"] || ""
+                )).map(b=>{
+                    const original = importedBuilds.find(x=>String(x.name || "") === String(b.name || ""));
+                    if(original && original.status) b.status = original.status;
+                    return b;
+                });
+                if(replace){
+                    builds = newBuilds;
+                    inventory = importedInventory;
+                    inventorySales = importedSales;
+                }else{
+                    builds = builds.concat(newBuilds);
+                    inventory = inventory.concat(importedInventory);
+                    inventorySales = inventorySales.concat(importedSales);
+                }
+                activeBuildId = builds[0] ? builds[0].id : null;
+                if(activeBuildId && typeof applyBuildToCurrent === "function") applyBuildToCurrent(builds[0]);
+                persistBuilds();
+                persistInventory();
+                persistInventorySales();
+                render();
+                renderInventory();
+                renderMonthlyStats();
+                if(typeof renderBusinessSummary === "function") renderBusinessSummary();
+                alert("Import realizat cu succes.");
+            }catch(err){
+                console.error(err);
+                alert("Nu am putut importa fișierul JSON.");
+            }finally{
+                event.target.value = "";
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    window.exportInventorySalesJSON = function(){
+        persistInventorySales();
+    };
+
+    function initializeInventorySalesAddon(){
+        persistInventorySales();
+        updateInventorySaleHeader();
+        try{ renderInventory(); }catch(e){ console.error(e); }
+        try{ renderMonthlyStats(); }catch(e){ console.error(e); }
+        try{ if(typeof renderBusinessSummary === "function") renderBusinessSummary(); }catch(e){}
+    }
+
+    if(document.readyState === "loading"){
+        document.addEventListener("DOMContentLoaded", initializeInventorySalesAddon);
+    }else{
+        initializeInventorySalesAddon();
+    }
+})();
+</script>
+
 </body>
 </html>
