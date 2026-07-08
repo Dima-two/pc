@@ -28,9 +28,9 @@ body{
     color:var(--text);
 }
 .app{
-    max-width:1280px;
+    max-width:1220px;
     margin:auto;
-    padding:18px;
+    padding:16px;
 }
 .header{
     display:flex;
@@ -48,10 +48,11 @@ body{
     color:var(--muted);
     font-size:14px;
 }
+/* Ajustare compactă pe desktop: panourile principale sunt puțin mai înguste, fără să se strice layout-ul. */
 .layout{
     display:grid;
-    grid-template-columns:420px 1fr;
-    gap:18px;
+    grid-template-columns:400px minmax(0,1fr);
+    gap:16px;
     align-items:start;
 }
 .card{
@@ -1270,7 +1271,8 @@ function loadBuilds(){
             name:b.name || `PC${index + 1}`,
             components:normalizeComponents(b.components || b.data || []),
             salePrice:Number(b.salePrice) || 0,
-            sold:Boolean(b.sold),
+            status:(b.status === "ready" || b.status === "sold" || b.status === "work") ? b.status : (Boolean(b.sold) ? "sold" : "work"),
+            sold:(b.status === "sold") || Boolean(b.sold),
             soldAt:normalizeDateInput(b.soldAt || b.soldDate || b.saleDate || b["Data vânzării"] || b["Data vanzarii"] || ""),
             createdAt:b.createdAt || new Date().toISOString(),
             updatedAt:b.updatedAt || b.createdAt || new Date().toISOString()
@@ -1395,6 +1397,11 @@ function componentSocket(item){
     return typeof item === "object" && item ? (item.socket || "") : "";
 }
 
+function categoryUsesSocket(cat){
+    const normalized = String(cat || "").trim().toUpperCase();
+    return normalized === "CPU" || normalized === "MB";
+}
+
 function componentLabel(item){
     const name = componentName(item);
     const socket = componentSocket(item);
@@ -1414,6 +1421,16 @@ function getBuildById(id){
 }
 
 function persistBuilds(){
+    try{
+        builds = (Array.isArray(builds) ? builds : []).map(b=>{
+            if(!b) return b;
+            if(b.status !== "ready" && b.status !== "sold" && b.status !== "work") b.status = b.sold ? "sold" : "work";
+            b.sold = b.status === "sold";
+            if(b.sold && !b.soldAt) b.soldAt = normalizeDateInput(b.soldAt || b.soldDate || b.saleDate || "") || todayISODate();
+            if(!b.sold) b.soldAt = "";
+            return b;
+        });
+    }catch(e){}
     localStorage.setItem(BUILDS_KEY, JSON.stringify(builds));
     if(activeBuildId){
         localStorage.setItem(ACTIVE_BUILD_KEY, activeBuildId);
@@ -1841,7 +1858,7 @@ function renderSavedBuilds(){
                 <td>${index + 1}</td>
                 <td>${escapeHTML(item.cat || "-")}</td>
                 <td>${escapeHTML(item.name || "-")}</td>
-                <td>${item.socket ? `<span class="socket-pill">${escapeHTML(item.socket)}</span>` : "-"}</td>
+                <td>${categoryUsesSocket(item.cat) && item.socket ? `<span class="socket-pill">${escapeHTML(item.socket)}</span>` : "-"}</td>
                 <td><b>${formatMoney(item.price)}</b> lei</td>
             </tr>
         `).join("") : '<tr><td colspan="5" class="table-empty">Acest PC nu are componente salvate.</td></tr>';
@@ -2421,7 +2438,7 @@ function render(){
             tr.innerHTML = `
                 <td>${escapeHTML(item.cat)}</td>
                 <td>${escapeHTML(item.name)}</td>
-                <td>${item.socket ? `<span class="socket-pill">${escapeHTML(item.socket)}</span>` : "-"}</td>
+                <td>${categoryUsesSocket(item.cat) && item.socket ? `<span class="socket-pill">${escapeHTML(item.socket)}</span>` : "-"}</td>
                 <td><input class="price-input" type="number" min="0" step="1" value="${Number(item.price) || 0}" oninput="updatePrice(${index}, this.value)"> lei</td>
                 <td><button class="del-btn" onclick="deleteComponent(${index})">X</button></td>
             `;
@@ -2758,7 +2775,7 @@ function createBuildSheetRows(build){
             "Nr componentă": componentIndex + 1,
             "Categorie": item.cat,
             "Componentă": item.name,
-            "Socket": item.socket || "",
+            "Socket": categoryUsesSocket(item.cat) ? (item.socket || "") : "",
             "Preț cumpărare lei": Number(item.price) || 0,
             "Investit total lei": componentIndex === 0 ? totalBuy : "",
             "Preț vânzare PC lei": componentIndex === 0 ? sale : "",
@@ -3031,8 +3048,139 @@ init();
 .warning-item.ok{background:#eaf8ef;border-color:#b7e4c7;color:#126734;}
 .stock-pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 8px;background:#ecfdf3;color:#166534;font-size:12px;font-weight:bold;margin-left:6px;}
 .source-pill{display:inline-flex;border-radius:999px;padding:3px 7px;background:#eef4ff;color:#2442a8;font-size:11px;font-weight:bold;margin-left:6px;}
+.no-socket-cell{display:inline-flex;align-items:center;min-height:38px;color:var(--muted);font-size:13px;}
 .status-select{width:auto;padding:6px 8px;font-size:12px;border-radius:10px;min-width:105px;}
 .client-print-box{display:none;}
+
+
+/* Design mai curat pentru tabelul componentelor din configurația PC */
+#currentComponentsListWrap{
+    border-radius:18px;
+    border-color:#d6e2f0;
+    background:#fff;
+    box-shadow:0 8px 24px rgba(15,23,42,.045);
+}
+#currentComponentsListWrap table{
+    min-width:940px;
+    table-layout:fixed;
+    border-collapse:separate;
+    border-spacing:0;
+}
+#currentComponentsListWrap th{
+    background:#f8fafc;
+    color:#475467;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.035em;
+    padding:12px 14px;
+}
+#currentComponentsListWrap td{
+    padding:12px 14px;
+    vertical-align:middle;
+}
+#currentComponentsListWrap tbody tr:nth-child(even){background:#fbfdff;}
+#currentComponentsListWrap tbody tr:hover{background:#f4f8ff;}
+#currentComponentsListWrap th:nth-child(1),
+#currentComponentsListWrap td:nth-child(1){width:120px;}
+#currentComponentsListWrap th:nth-child(2),
+#currentComponentsListWrap td:nth-child(2){width:245px;}
+#currentComponentsListWrap th:nth-child(3),
+#currentComponentsListWrap td:nth-child(3){width:145px;}
+#currentComponentsListWrap th:nth-child(4),
+#currentComponentsListWrap td:nth-child(4){width:145px;}
+#currentComponentsListWrap th:nth-child(5),
+#currentComponentsListWrap td:nth-child(5){width:105px;}
+#currentComponentsListWrap th:nth-child(6),
+#currentComponentsListWrap td:nth-child(6){width:125px;}
+#currentComponentsListWrap th:nth-child(7),
+#currentComponentsListWrap td:nth-child(7){width:70px;text-align:center;}
+#currentComponentsListWrap input,
+#currentComponentsListWrap select{
+    height:42px;
+    min-height:42px;
+    border-radius:13px;
+    border-color:#c9d7e8;
+    background:#fff;
+    font-size:14px;
+    box-shadow:none;
+}
+#currentComponentsListWrap select{
+    padding-left:12px;
+    padding-right:28px;
+}
+#currentComponentsListWrap .component-name-cell input,
+#currentComponentsListWrap .component-socket-cell input,
+#currentComponentsListWrap .component-cat-cell select{
+    width:100%;
+}
+#currentComponentsListWrap .component-price-cell,
+#currentComponentsListWrap .component-total-cell{
+    white-space:nowrap;
+}
+#currentComponentsListWrap .input-unit{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+}
+#currentComponentsListWrap .input-unit input.price-input{
+    width:92px;
+    max-width:92px;
+    padding:9px 10px;
+}
+#currentComponentsListWrap .input-unit span{
+    color:var(--muted);
+    font-size:13px;
+    font-weight:bold;
+}
+#currentComponentsListWrap .qty-input{
+    width:72px;
+    max-width:72px;
+    text-align:center;
+    padding:9px 10px;
+}
+#currentComponentsListWrap .component-total-cell b{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:94px;
+    min-height:38px;
+    padding:8px 10px;
+    border-radius:12px;
+    background:#f1f5f9;
+    color:#0f172a;
+    font-size:14px;
+    line-height:1;
+    white-space:nowrap;
+}
+#currentComponentsListWrap .no-socket-cell{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    height:42px;
+    border:1px dashed #d4deeb;
+    border-radius:13px;
+    background:#f8fafc;
+    color:#9aa8ba;
+}
+#currentComponentsListWrap .del-btn{
+    width:34px;
+    height:34px;
+    padding:0;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+#currentComponentsListWrap .source-pill{
+    margin:6px 0 0;
+}
+@media(max-width:980px){
+    #currentComponentsListWrap table{min-width:880px;}
+    #currentComponentsListWrap th,
+    #currentComponentsListWrap td{padding:10px 11px;}
+}
 @media(max-width:980px){.business-summary,.price-recommendations{grid-template-columns:repeat(2,1fr);} .pc-extra-controls{grid-template-columns:1fr;}}
 @media(max-width:620px){.business-summary,.price-recommendations{grid-template-columns:1fr;}}
 @media print{.no-print{display:none!important;}.client-print-box{display:block;}}
@@ -3052,14 +3200,20 @@ init();
         return "inv_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
     }
 
+    function categoryUsesSocket(cat){
+        const normalized = String(cat || "").trim().toUpperCase();
+        return normalized === "CPU" || normalized === "MB";
+    }
+
     function normalizeComponentsPlus(items){
         if(!Array.isArray(items)) return [];
         return items.map(x=>{
             const qtyRaw = x.qty ?? x.quantity ?? x["Cantitate"] ?? x["Cant."] ?? 1;
+            const cat = String(x.cat || x.category || x["Categorie"] || "").trim();
             return {
-                cat:String(x.cat || x.category || x["Categorie"] || "").trim(),
+                cat,
                 name:String(x.name || x.component || x["Componentă"] || x["Componenta"] || "").trim(),
-                socket:String(x.socket || x["Socket"] || "").trim(),
+                socket:categoryUsesSocket(cat) ? String(x.socket || x["Socket"] || "").trim() : "",
                 price:Number(x.price ?? x.buyPrice ?? x["Preț bucata lei"] ?? x["Pret bucata lei"] ?? x["Preț cumpărare lei"] ?? x["Pret cumparare lei"] ?? x["Preț"] ?? x["Pret"] ?? 0) || 0,
                 qty:Math.max(1, Number(qtyRaw) || 1),
                 inventoryId:String(x.inventoryId || x.stocId || x["ID stoc"] || ""),
@@ -3324,7 +3478,7 @@ init();
             return;
         }
         const stock = findInventoryForComponent(selectedCat, selectedComp.name);
-        const socketText = selectedComp.socket ? ` <span class="socket-pill">${escapeHTML(selectedComp.socket)}</span>` : "";
+        const socketText = categoryUsesSocket(selectedCat) && selectedComp.socket ? ` <span class="socket-pill">${escapeHTML(selectedComp.socket)}</span>` : "";
         const stockText = stock ? ` <span class="stock-pill">În stoc: ${formatMoney(stock.qty)} buc. · ${formatMoney(stock.price)} lei</span>` : "";
         box.innerHTML = `<strong>${escapeHTML(selectedCat)}</strong> - ${escapeHTML(selectedComp.name)}${socketText}${stockText}`;
     };
@@ -3358,7 +3512,7 @@ init();
             return;
         }
 
-        data.push({cat:selectedCat, name:selectedComp.name, socket:selectedComp.socket || "", price, qty:1, inventoryId, source});
+        data.push({cat:selectedCat, name:selectedComp.name, socket:categoryUsesSocket(selectedCat) ? (selectedComp.socket || "") : "", price, qty:1, inventoryId, source});
         save();
         priceInput.value = "";
         render();
@@ -3390,10 +3544,13 @@ init();
             item.qty = newQty;
         }else if(field === "cat"){
             item.cat = String(value || "").trim() || item.cat;
+            if(!categoryUsesSocket(item.cat)){
+                item.socket = "";
+            }
         }else if(field === "name"){
             item.name = String(value || "").trim() || item.name;
         }else if(field === "socket"){
-            item.socket = String(value || "").trim();
+            item.socket = categoryUsesSocket(item.cat) ? String(value || "").trim() : "";
         }
         data = normalizeComponentsPlus(data);
         save();
@@ -3560,7 +3717,7 @@ init();
                         <td>${index + 1}</td>
                         <td>${escapeHTML(item.cat || "-")}</td>
                         <td>${escapeHTML(item.name || "-")}${item.source === "stoc" ? '<span class="source-pill">Stoc</span>' : ""}</td>
-                        <td>${item.socket ? `<span class="socket-pill">${escapeHTML(item.socket)}</span>` : "-"}</td>
+                        <td>${categoryUsesSocket(item.cat) && item.socket ? `<span class="socket-pill">${escapeHTML(item.socket)}</span>` : "-"}</td>
                         <td>${formatMoney(item.price)} lei</td>
                         <td>${qty}</td>
                         <td><b>${formatMoney(lineTotal)}</b> lei</td>
@@ -3673,19 +3830,22 @@ init();
             data.forEach((item,index)=>{
                 const qty = Number(item.qty) || 1;
                 const lineTotal = (Number(item.price)||0) * qty;
+                const socketCell = categoryUsesSocket(item.cat)
+                    ? `<input value="${escapeHTML(item.socket || "")}" placeholder="Socket" oninput="updateComponentField(${index}, 'socket', this.value)">`
+                    : '<span class="no-socket-cell">—</span>';
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td>
+                    <td class="component-cat-cell">
                         <select onchange="updateComponentField(${index}, 'cat', this.value)">
                             ${Object.keys(DB).map(cat=>`<option value="${escapeHTML(cat)}" ${cat === item.cat ? "selected" : ""}>${escapeHTML(cat)}</option>`).join("")}
                         </select>
                     </td>
-                    <td><input value="${escapeHTML(item.name)}" oninput="updateComponentField(${index}, 'name', this.value)">${item.source === "stoc" ? '<span class="source-pill">Stoc</span>' : ""}</td>
-                    <td><input value="${escapeHTML(item.socket || "")}" placeholder="Socket" oninput="updateComponentField(${index}, 'socket', this.value)"></td>
-                    <td><input class="price-input" type="number" min="0" step="1" value="${Number(item.price) || 0}" oninput="updateComponentField(${index}, 'price', this.value)"> lei</td>
-                    <td><input class="qty-input" type="number" min="1" step="1" value="${qty}" onchange="updateComponentField(${index}, 'qty', this.value)"></td>
-                    <td><b>${formatMoney(lineTotal)} lei</b></td>
-                    <td><button class="del-btn" onclick="deleteComponent(${index})">X</button></td>`;
+                    <td class="component-name-cell"><input value="${escapeHTML(item.name)}" oninput="updateComponentField(${index}, 'name', this.value)">${item.source === "stoc" ? '<span class="source-pill">Stoc</span>' : ""}</td>
+                    <td class="component-socket-cell">${socketCell}</td>
+                    <td class="component-price-cell"><div class="input-unit"><input class="price-input" type="number" min="0" step="1" value="${Number(item.price) || 0}" oninput="updateComponentField(${index}, 'price', this.value)"><span>lei</span></div></td>
+                    <td class="component-qty-cell"><input class="qty-input" type="number" min="1" step="1" value="${qty}" onchange="updateComponentField(${index}, 'qty', this.value)"></td>
+                    <td class="component-total-cell"><b>${formatMoney(lineTotal)} lei</b></td>
+                    <td class="component-delete-cell"><button class="del-btn" onclick="deleteComponent(${index})">X</button></td>`;
                 list.appendChild(tr);
             });
         }
@@ -3853,7 +4013,7 @@ init();
                 "Nr componentă": componentIndex + 1,
                 "Categorie": item.cat,
                 "Componentă": item.name,
-                "Socket": item.socket || "",
+                "Socket": categoryUsesSocket(item.cat) ? (item.socket || "") : "",
                 "Sursă": item.source === "stoc" ? "Stoc" : "Manual",
                 "Preț bucata lei": Number(item.price) || 0,
                 "Cantitate": qty,
@@ -3934,11 +4094,12 @@ init();
         if(components.length === 0 && sale <= 0){ alert("Nu există date pentru fișa clientului."); return; }
         const rows = components.map((item,index)=>{
             const qty = Number(item.qty)||1;
-            return `<tr><td>${index+1}</td><td>${escapeHTML(item.cat)}</td><td>${escapeHTML(item.name)}</td><td>${escapeHTML(item.socket || "-")}</td><td>${qty}</td></tr>`;
+            return `<tr><td>${index+1}</td><td>${escapeHTML(item.cat)}</td><td>${escapeHTML(item.name)}</td><td>${escapeHTML(categoryUsesSocket(item.cat) ? (item.socket || "-") : "-")}</td><td>${qty}</td></tr>`;
         }).join("");
         const w = window.open("", "_blank");
         if(!w){ alert("Browserul a blocat fereastra de print."); return; }
-        w.document.write(`<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"><title>Fișă client - ${escapeHTML(name)}</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#172033}h1{margin:0 0 5px}.muted{color:#667085}.box{border:1px solid #d9e2ec;border-radius:12px;padding:14px;margin:15px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border-bottom:1px solid #d9e2ec;padding:9px;text-align:left}th{background:#f1f5f9}.total{font-size:22px;font-weight:bold;text-align:right}.footer{margin-top:35px;display:flex;justify-content:space-between}.line{border-top:1px solid #172033;width:220px;text-align:center;padding-top:7px}</style></head><body><h1>Fișă calculator</h1><div class="muted">Data: ${formatDateRo(todayISODate())}</div><div class="box"><b>${escapeHTML(name)}</b><br>Preț final: <b>${formatMoney(sale)} lei</b></div><table><thead><tr><th>Nr</th><th>Categorie</th><th>Componentă</th><th>Socket</th><th>Cant.</th></tr></thead><tbody>${rows || '<tr><td colspan="5">Fără componente.</td></tr>'}</tbody></table><div class="box total">Total client: ${formatMoney(sale)} lei</div><div class="muted">Garanție / observații: ________________________________________________</div><div class="footer"><div class="line">Vânzător</div><div class="line">Client</div></div><script>window.onload=function(){window.print();}</` + `script></body></html>`);
+        w.document.write(`<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"><title>Fișă client - ${escapeHTML(name)}</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#172033}h1{margin:0 0 5px}.muted{color:#667085}.box{border:1px solid #d9e2ec;border-radius:12px;padding:14px;margin:15px 0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border-bottom:1px solid #d9e2ec;padding:9px;text-align:left}th{background:#f1f5f9}.total{font-size:22px;font-weight:bold;text-align:right}.footer{margin-top:35px;display:flex;justify-content:space-between}.line{border-top:1px solid #172033;width:220px;text-align:center;padding-top:7px}</style></head><body><h1>Fișă calculator</h1><div class="muted">Data: ${formatDateRo(todayISODate())}</div><div class="box"><b>${escapeHTML(name)}</b><br>Preț final: <b>${formatMoney(sale)} lei</b></div><table><thead><tr><th>Nr</th><th>Categorie</th><th>Componentă</th><th>Socket</th><th>Cant.</th></tr></thead><tbody>${rows || '<tr><td colspan="5">Fără componente.</td></tr>'}</tbody></table><div class="box total">Total client: ${formatMoney(sale)} lei</div><div class="muted">Garanție / observații: ________________________________________________</div><div class="footer"><div class="line">Vânzător</div><div class="line">Client</div></div><script>window.onload=function(){window.print();}</` + `script>
+</body></html>`);
         w.document.close();
     };
 
@@ -4463,5 +4624,264 @@ init();
 })();
 </script>
 
+
+
+<style id="pc-new-default-and-hide-qty-style">
+/* Ultimele ajustări: PC nou implicit + fără coloană Cantitate în configurația curentă */
+#currentComponentsListWrap table{
+    min-width:820px !important;
+}
+#currentComponentsListWrap th:nth-child(5),
+#currentComponentsListWrap td:nth-child(5){
+    display:none !important;
+}
+#currentComponentsListWrap th:nth-child(1),
+#currentComponentsListWrap td:nth-child(1){width:120px !important;}
+#currentComponentsListWrap th:nth-child(2),
+#currentComponentsListWrap td:nth-child(2){width:260px !important;}
+#currentComponentsListWrap th:nth-child(3),
+#currentComponentsListWrap td:nth-child(3){width:145px !important;}
+#currentComponentsListWrap th:nth-child(4),
+#currentComponentsListWrap td:nth-child(4){width:150px !important;}
+#currentComponentsListWrap th:nth-child(6),
+#currentComponentsListWrap td:nth-child(6){width:135px !important;}
+#currentComponentsListWrap th:nth-child(7),
+#currentComponentsListWrap td:nth-child(7){width:70px !important;text-align:center;}
+@media(max-width:980px){
+    #currentComponentsListWrap table{min-width:780px !important;}
+}
+</style>
+
+<script id="pc-new-default-and-hide-qty-script">
+(function(){
+    function showPcNouLabel(){
+        try{
+            const label = document.getElementById("activePcLabel");
+            if(label && !getBuildById(activeBuildId)){
+                label.textContent = "PC nou";
+            }
+        }catch(e){}
+    }
+
+    const oldUpdateActivePcLabelFinal = window.updateActivePcLabel;
+    window.updateActivePcLabel = function(){
+        if(typeof oldUpdateActivePcLabelFinal === "function"){
+            oldUpdateActivePcLabelFinal();
+        }
+        showPcNouLabel();
+    };
+
+    function openEmptyPcByDefault(){
+        try{
+            activeBuildId = null;
+            data = [];
+            const sale = document.getElementById("salePrice");
+            if(sale) sale.value = "";
+            localStorage.removeItem(ACTIVE_BUILD_KEY);
+            localStorage.setItem(LEGACY_COMPONENTS_KEY, JSON.stringify([]));
+            localStorage.setItem(LEGACY_SALE_KEY, "");
+            if(typeof clearSelection === "function") clearSelection();
+            if(typeof persistBuilds === "function") persistBuilds();
+            if(typeof render === "function") render();
+            showPcNouLabel();
+        }catch(err){
+            console.error("Nu s-a putut deschide implicit PC nou:", err);
+        }
+    }
+
+    const oldNewDraftFinal = window.newDraft;
+    window.newDraft = function(){
+        if(typeof oldNewDraftFinal === "function"){
+            oldNewDraftFinal();
+        }
+        showPcNouLabel();
+    };
+
+    if(document.readyState === "loading"){
+        document.addEventListener("DOMContentLoaded", function(){
+            setTimeout(openEmptyPcByDefault, 120);
+        });
+    }else{
+        setTimeout(openEmptyPcByDefault, 120);
+    }
+})();
+</script>
+
+
+
+<style id="pc-current-components-category-no-total-style">
+/* Configurația curentă: categoria este afișată din nou, iar coloana Total este ascunsă. */
+#currentComponentsListWrap table{
+    min-width:760px !important;
+}
+#currentComponentsListWrap th.current-component-cat,
+#currentComponentsListWrap td.current-component-cat,
+#currentComponentsListWrap th.current-component-name,
+#currentComponentsListWrap td.current-component-name,
+#currentComponentsListWrap th.current-component-socket,
+#currentComponentsListWrap td.current-component-socket,
+#currentComponentsListWrap th.current-component-price,
+#currentComponentsListWrap td.current-component-price{display:table-cell !important;}
+#currentComponentsListWrap th.current-component-cat,
+#currentComponentsListWrap td.current-component-cat{width:120px !important;}
+#currentComponentsListWrap th.current-component-name,
+#currentComponentsListWrap td.current-component-name{width:280px !important;}
+#currentComponentsListWrap th.current-component-socket,
+#currentComponentsListWrap td.current-component-socket{width:150px !important;}
+#currentComponentsListWrap th.current-component-price,
+#currentComponentsListWrap td.current-component-price{width:160px !important;}
+#currentComponentsListWrap th.current-component-delete,
+#currentComponentsListWrap td.current-component-delete{width:70px !important;text-align:center;display:table-cell !important;}
+@media(max-width:980px){
+    #currentComponentsListWrap table{min-width:720px !important;}
+}
+</style>
+
+<script id="pc-current-components-category-no-total-script">
+(function(){
+    function usesSocket(cat){
+        return String(cat || "").trim().toUpperCase() === "CPU" || String(cat || "").trim().toUpperCase() === "MB";
+    }
+
+    function normalizeCurrentRows(items){
+        if(!Array.isArray(items)) return [];
+        return items.map(x=>({
+            cat:String(x.cat || x.category || x["Categorie"] || "").trim(),
+            name:String(x.name || x.component || x["Componentă"] || x["Componenta"] || "").trim(),
+            socket:String(x.socket || x["Socket"] || "").trim(),
+            price:Number(x.price ?? x.buyPrice ?? x["Preț cumpărare lei"] ?? x["Pret cumparare lei"] ?? 0) || 0,
+            qty:Math.max(1, Number(x.qty ?? x.quantity ?? x["Cantitate"] ?? 1) || 1),
+            source:x.source || "",
+            inventoryId:x.inventoryId || ""
+        })).filter(x=>x.cat && x.name);
+    }
+
+    function renderCurrentComponentsHeader(){
+        const wrap = document.getElementById("currentComponentsListWrap");
+        if(!wrap) return;
+        wrap.innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th class="current-component-cat">Categorie</th>
+                        <th class="current-component-name">Componentă</th>
+                        <th class="current-component-socket">Socket</th>
+                        <th class="current-component-price">Preț/buc.</th>
+                        <th class="current-component-delete">Șterge</th>
+                    </tr>
+                </thead>
+                <tbody id="list"></tbody>
+            </table>`;
+    }
+
+    window.render = function(){
+        renderCurrentComponentsHeader();
+        const list = document.getElementById("list");
+        if(!list) return;
+        data = normalizeCurrentRows(data);
+        list.innerHTML = "";
+        if(data.length === 0){
+            list.innerHTML = '<tr><td colspan="5" class="table-empty">Nu ai adăugat încă nicio componentă.</td></tr>';
+        }else{
+            data.forEach((item,index)=>{
+                const socketCell = usesSocket(item.cat)
+                    ? `<input value="${escapeHTML(item.socket || "")}" placeholder="Socket" oninput="updateComponentField(${index}, 'socket', this.value)">`
+                    : '<span class="no-socket-cell">—</span>';
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td class="component-cat-cell current-component-cat">
+                        <select onchange="updateComponentField(${index}, 'cat', this.value)">
+                            ${Object.keys(DB).map(cat=>`<option value="${escapeHTML(cat)}" ${cat === item.cat ? "selected" : ""}>${escapeHTML(cat)}</option>`).join("")}
+                        </select>
+                    </td>
+                    <td class="component-name-cell current-component-name"><input value="${escapeHTML(item.name)}" oninput="updateComponentField(${index}, 'name', this.value)">${item.source === "stoc" ? '<span class="source-pill">Stoc</span>' : ""}</td>
+                    <td class="component-socket-cell current-component-socket">${socketCell}</td>
+                    <td class="component-price-cell current-component-price"><div class="input-unit"><input class="price-input" type="number" min="0" step="1" value="${Number(item.price) || 0}" oninput="updateComponentField(${index}, 'price', this.value)"><span>lei</span></div></td>
+                    <td class="component-delete-cell current-component-delete"><button class="del-btn" onclick="deleteComponent(${index})">X</button></td>`;
+                list.appendChild(tr);
+            });
+        }
+        const count = document.getElementById("itemsCount");
+        if(count) count.textContent = data.length === 1 ? "1 poziție" : `${data.length} poziții`;
+        if(typeof updateCurrentComponentsListControls === "function") updateCurrentComponentsListControls();
+        if(typeof renderTotalsOnly === "function") renderTotalsOnly();
+        if(typeof renderSavedBuilds === "function") renderSavedBuilds();
+        if(typeof renderChart === "function") renderChart();
+        if(typeof renderMonthlyStats === "function") renderMonthlyStats();
+        if(typeof renderInventory === "function") renderInventory();
+        if(typeof renderBusinessSummary === "function") renderBusinessSummary();
+    };
+
+    if(document.readyState === "loading"){
+        document.addEventListener("DOMContentLoaded", function(){ setTimeout(function(){ try{ render(); }catch(e){ console.error(e); } }, 180); });
+    }else{
+        setTimeout(function(){ try{ render(); }catch(e){ console.error(e); } }, 180);
+    }
+})();
+</script>
+
 </body>
 </html>
+<style id="pc-current-components-compact-fit-style">
+/* Ajustare finală: coloanele Componentă, Socket și Preț sunt mai înguste ca tabelul să încapă într-o linie. */
+#currentComponentsListWrap table{
+    width:100% !important;
+    min-width:650px !important;
+    table-layout:fixed !important;
+}
+#currentComponentsListWrap th,
+#currentComponentsListWrap td{
+    padding:10px 10px !important;
+}
+#currentComponentsListWrap th.current-component-cat,
+#currentComponentsListWrap td.current-component-cat{
+    width:105px !important;
+}
+#currentComponentsListWrap th.current-component-name,
+#currentComponentsListWrap td.current-component-name{
+    width:230px !important;
+}
+#currentComponentsListWrap th.current-component-socket,
+#currentComponentsListWrap td.current-component-socket{
+    width:125px !important;
+}
+#currentComponentsListWrap th.current-component-price,
+#currentComponentsListWrap td.current-component-price{
+    width:130px !important;
+}
+#currentComponentsListWrap th.current-component-delete,
+#currentComponentsListWrap td.current-component-delete{
+    width:58px !important;
+    text-align:center !important;
+}
+#currentComponentsListWrap input,
+#currentComponentsListWrap select,
+#currentComponentsListWrap .no-socket-cell{
+    height:40px !important;
+    min-height:40px !important;
+    border-radius:12px !important;
+    font-size:14px !important;
+}
+#currentComponentsListWrap .component-cat-cell select{
+    padding-left:10px !important;
+    padding-right:24px !important;
+}
+#currentComponentsListWrap .component-price-cell .input-unit{
+    gap:5px !important;
+}
+#currentComponentsListWrap .component-price-cell input.price-input{
+    width:78px !important;
+    max-width:78px !important;
+    padding:8px 9px !important;
+}
+#currentComponentsListWrap .component-price-cell .input-unit span{
+    font-size:12px !important;
+}
+#currentComponentsListWrap .del-btn{
+    width:32px !important;
+    height:32px !important;
+}
+@media(max-width:980px){
+    #currentComponentsListWrap table{min-width:650px !important;}
+}
+</style>
