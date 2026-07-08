@@ -4199,6 +4199,22 @@ init();
         localStorage.setItem(INVENTORY_SALES_KEY, JSON.stringify(inventorySales));
     }
 
+    // Folosit la import Excel/JSON: actualizează și variabila internă din acest modul, nu doar localStorage.
+    window.__setInventorySales = function(items){
+        inventorySales = normalizeInventorySales(items);
+        window.inventorySales = inventorySales;
+        localStorage.setItem(INVENTORY_SALES_KEY, JSON.stringify(inventorySales));
+        return inventorySales;
+    };
+
+    window.__getInventorySales = function(){
+        inventorySales = normalizeInventorySales(inventorySales);
+        window.inventorySales = inventorySales;
+        return inventorySales;
+    };
+
+    window.__normalizeInventorySales = normalizeInventorySales;
+
     function parsePositiveNumber(value){
         const nr = Number(String(value || "").replace(",", "."));
         return Number.isFinite(nr) ? nr : 0;
@@ -5008,6 +5024,319 @@ init();
         }
 
         XLSX.writeFile(wb, "pc_builder_export_complet.xlsx");
+    };
+})();
+</script>
+
+
+<script id="excel-import-stock-sales-fix">
+(function(){
+    const INVENTORY_SALES_KEY_IMPORT_FIX = "pc_builder_inventory_sales_v1";
+
+    function normalizeSheetName(name){
+        return String(name || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim()
+            .toLowerCase();
+    }
+
+    function readNumber(value){
+        if(typeof value === "number" && Number.isFinite(value)) return value;
+        let text = String(value ?? "").trim();
+        if(!text) return 0;
+        text = text.replace(/lei/gi, "").replace(/\s+/g, "");
+        if(/^[-+]?\d{1,3}(\.\d{3})+(,\d+)?$/.test(text)){
+            text = text.replace(/\./g, "").replace(",", ".");
+        }else{
+            text = text.replace(",", ".");
+        }
+        const nr = Number(text.replace(/[^0-9.+-]/g, ""));
+        return Number.isFinite(nr) ? nr : 0;
+    }
+
+    function readText(row, keys){
+        for(const key of keys){
+            if(Object.prototype.hasOwnProperty.call(row, key) && String(row[key] ?? "").trim() !== ""){
+                return String(row[key]).trim();
+            }
+        }
+        return "";
+    }
+
+    function statusFromText(value){
+        const text = normalizeSheetName(value);
+        if(!text) return "";
+        if(text.includes("nevandut")) return "work";
+        if(text.includes("vandut") || text.includes("sold")) return "sold";
+        if(text.includes("gata") || text.includes("ready")) return "ready";
+        if(text.includes("lucru") || text.includes("work")) return "work";
+        return "";
+    }
+
+    function statusLabelToSold(status){
+        return status === "sold";
+    }
+
+    function parseWorkbookInventoryRows(rows){
+        if(typeof parseInventoryRows === "function") return parseInventoryRows(rows);
+        return normalizeInventory(rows.map(row=>({
+            cat: row["Categorie"],
+            name: row["Componentă"] || row["Componenta"],
+            price: row["Preț bucata lei"] || row["Pret bucata lei"] || row["Preț"] || row["Pret"],
+            qty: row["Cantitate"]
+        })));
+    }
+
+    function parseSoldComponentRows(rows){
+        const normalizer = typeof window.__normalizeInventorySales === "function" ? window.__normalizeInventorySales : function(items){ return items; };
+        const mapped = rows.map(row=>{
+            const qty = Math.max(1, Math.floor(readNumber(row["Cantitate"] || 1)) || 1);
+            const costUnit = readNumber(row["Preț cumpărare bucata lei"] || row["Pret cumparare bucata lei"] || row["Preț cumpărare lei"] || row["Pret cumparare lei"] || 0);
+            const saleUnit = readNumber(row["Preț vânzare bucata lei"] || row["Pret vanzare bucata lei"] || row["Preț vânzare lei"] || row["Pret vanzare lei"] || 0);
+            const cost = readNumber(row["Investit total lei"] || row["Cost total lei"] || 0) || costUnit * qty;
+            const sale = readNumber(row["Vânzare total lei"] || row["Vanzare total lei"] || row["Preț total vânzare lei"] || 0) || saleUnit * qty;
+            const soldAt = normalizeDateInput(row["Data vânzării"] || row["Data vanzarii"] || row["Data"] || todayISODate()) || todayISODate();
+            return {
+                id:String(row["ID vânzare"] || row["ID vanzare"] || row["ID"] || ("sale_import_" + Date.now() + "_" + Math.random().toString(36).slice(2,8))),
+                source:"stoc",
+                cat:readText(row, ["Categorie", "Categoria"]),
+                name:readText(row, ["Componentă", "Componenta", "Denumire"]),
+                qty,
+                costUnit: costUnit || (qty ? cost / qty : 0),
+                saleUnit: saleUnit || (qty ? sale / qty : 0),
+                cost,
+                sale,
+                profit: readNumber(row["Profit lei"] || 0) || (sale - cost),
+                soldAt
+            };
+        });
+        return normalizer(mapped).filter(x=>x && x.cat && x.name);
+    }
+
+    function parseStockSalesFromMonthlyRows(rows){
+        const knownCats = new Set(Object.keys(DB || {}).map(x=>String(x).toUpperCase()));
+        const normalizer = typeof window.__normalizeInventorySales === "function" ? window.__normalizeInventorySales : function(items){ return items; };
+        const mapped = rows
+            .filter(row=>normalizeSheetName(row["Tip"] || row["Tip vânzare"] || row["Tip vanzare"]).includes("stoc"))
+            .map(row=>{
+                let label = readText(row, ["Vânzare", "Vanzare", "Componentă", "Componenta"]);
+                let qty = Math.max(1, Math.floor(readNumber(row["Cantitate"] || 1)) || 1);
+                const qtyMatch = label.match(/×\s*(\d+)\s*$/) || label.match(/x\s*(\d+)\s*$/i);
+                if(qtyMatch){
+                    qty = Math.max(1, Number(qtyMatch[1]) || qty);
+                    label = label.replace(/(?:×|x)\s*\d+\s*$/i, "").trim();
+                }
+                const parts = label.split(/\s+/);
+                let cat = parts[0] || "";
+                let name = parts.slice(1).join(" ");
+                if(!knownCats.has(cat.toUpperCase())){
+                    cat = readText(row, ["Categorie", "Categoria"]);
+                    name = label;
+                }
+                const cost = readNumber(row["Investit total lei"] || row["Investit"] || 0);
+                const sale = readNumber(row["Preț vânzare lei"] || row["Pret vanzare lei"] || row["Preț"] || row["Pret"] || 0);
+                const soldAt = normalizeDateInput(row["Data vânzării"] || row["Data vanzarii"] || row["Data"] || todayISODate()) || todayISODate();
+                return {
+                    id:"sale_import_" + Date.now() + "_" + Math.random().toString(36).slice(2,8),
+                    source:"stoc",
+                    cat,
+                    name,
+                    qty,
+                    costUnit: qty ? cost / qty : 0,
+                    saleUnit: qty ? sale / qty : 0,
+                    cost,
+                    sale,
+                    profit: readNumber(row["Profit lei"] || 0) || (sale - cost),
+                    soldAt
+                };
+            });
+        return normalizer(mapped).filter(x=>x && x.cat && x.name);
+    }
+
+    function addRowsToBuildMap(rows, map, fallbackName){
+        rows.forEach(row=>{
+            const pcName = readText(row, ["Nume PC", "PC", "Calculator"]) || fallbackName || "PC importat";
+            if(!map.has(pcName)){
+                map.set(pcName, {name:pcName, components:[], salePrice:0, sold:false, soldAt:"", status:"work"});
+            }
+            const build = map.get(pcName);
+            const status = statusFromText(row["Status"] || row["Stare"] || row["Vândut"] || row["Vandut"] || row["Sold"] || "");
+            if(status){
+                build.status = status;
+                build.sold = statusLabelToSold(status);
+            }
+            const sale = readNumber(row["Preț vânzare PC lei"] || row["Pret vanzare PC lei"] || row["Preț vânzare lei"] || row["Pret vanzare lei"] || 0);
+            if(sale > 0) build.salePrice = sale;
+            const soldDate = normalizeDateInput(row["Data vânzării"] || row["Data vanzarii"] || row["Data vanzare"] || row["Data"] || "");
+            if(soldDate && (build.status === "sold" || parseSoldStatus(row["Status"] || row["Vândut"] || row["Vandut"] || row["Sold"] || ""))){
+                build.soldAt = soldDate;
+                build.sold = true;
+                build.status = "sold";
+            }
+            const cat = readText(row, ["Categorie", "Categoria"]);
+            const component = readText(row, ["Componentă", "Componenta"]);
+            const socket = readText(row, ["Socket"]);
+            const price = readNumber(row["Preț cumpărare lei"] || row["Pret cumparare lei"] || row["Preț/buc."] || row["Pret/buc."] || row["Preț"] || row["Pret"] || 0);
+            if(cat && component){
+                build.components.push({cat, name:component, socket: categoryUsesSocket(cat) ? socket : "", price});
+            }
+        });
+    }
+
+    function parseWorkbookComplete(buffer){
+        const wb = XLSX.read(buffer, {type:"array"});
+        const map = new Map();
+        const result = {builds:[], inventory:[], inventorySales:[]};
+        const sheetByNorm = new Map(wb.SheetNames.map(name=>[normalizeSheetName(name), name]));
+        const inventorySheetName = sheetByNorm.get("stoc componente") || sheetByNorm.get("stoc") || sheetByNorm.get("inventory");
+        const soldComponentsSheetName = sheetByNorm.get("componente vandute") || sheetByNorm.get("vanzari stoc") || sheetByNorm.get("vanzari componente") || sheetByNorm.get("componente sold");
+        const monthlySheetName = sheetByNorm.get("statistica lunara") || sheetByNorm.get("statistica lunar") || sheetByNorm.get("monthly sales");
+
+        if(inventorySheetName){
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[inventorySheetName], {defval:""});
+            result.inventory = parseWorkbookInventoryRows(rows);
+        }
+        if(soldComponentsSheetName){
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[soldComponentsSheetName], {defval:""});
+            result.inventorySales = parseSoldComponentRows(rows);
+        }
+        if(result.inventorySales.length === 0 && monthlySheetName){
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[monthlySheetName], {defval:""});
+            result.inventorySales = parseStockSalesFromMonthlyRows(rows);
+        }
+
+        const skipForPc = new Set([
+            "sumar", "sumar pc", "calculatoare sumar",
+            "stoc", "stoc componente", "inventory",
+            "statistica lunara", "statistica lunar", "monthly sales",
+            "componente vandute", "vanzari stoc", "vanzari componente", "componente sold"
+        ]);
+
+        if(wb.Sheets["Calculatoare"]){
+            addRowsToBuildMap(XLSX.utils.sheet_to_json(wb.Sheets["Calculatoare"], {defval:""}), map, "PC importat");
+        }
+
+        // Sumar PC păstrează corect statusul, prețul și data, dar nu creează componente.
+        const summaryPcSheet = sheetByNorm.get("sumar pc") || sheetByNorm.get("sumar");
+        if(summaryPcSheet){
+            addRowsToBuildMap(XLSX.utils.sheet_to_json(wb.Sheets[summaryPcSheet], {defval:""}), map, "PC importat");
+        }
+
+        wb.SheetNames.forEach(sheetName=>{
+            const normalized = normalizeSheetName(sheetName);
+            if(normalized === "calculatoare") return;
+            if(skipForPc.has(normalized)) return;
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:""});
+            addRowsToBuildMap(rows, map, sheetName);
+        });
+
+        result.builds = Array.from(map.values()).map((b,index)=>{
+            const build = createBuild(b.name || `PC${index + 1}`, b.components, b.salePrice, Boolean(b.sold || b.status === "sold"), b.soldAt || "");
+            build.status = b.status || (build.sold ? "sold" : "work");
+            build.sold = build.status === "sold";
+            if(build.sold && !build.soldAt) build.soldAt = todayISODate();
+            if(!build.sold) build.soldAt = "";
+            return build;
+        });
+        return result;
+    }
+
+    function parseJsonComplete(text){
+        const parsed = JSON.parse(text);
+        const rawBuilds = Array.isArray(parsed) ? parsed : (parsed.builds || []);
+        const rawInventory = Array.isArray(parsed) ? [] : (parsed.inventory || parsed.stoc || []);
+        const rawSales = Array.isArray(parsed) ? [] : (parsed.inventorySales || parsed.sales || parsed.vanzariStoc || []);
+        const buildsParsed = rawBuilds.map((b,index)=>{
+            const status = b.status || (b.sold ? "sold" : "work");
+            const build = createBuild(
+                b.name || `PC${index + 1}`,
+                b.components || b.data || [],
+                b.salePrice || b["Preț vânzare PC lei"] || 0,
+                status === "sold" || Boolean(b.sold),
+                b.soldAt || b.soldDate || b.saleDate || b["Data vânzării"] || b["Data vanzarii"] || ""
+            );
+            build.status = statusFromText(status) || status;
+            build.sold = build.status === "sold";
+            if(!build.sold) build.soldAt = "";
+            return build;
+        });
+        const normalizer = typeof window.__normalizeInventorySales === "function" ? window.__normalizeInventorySales : function(items){ return items; };
+        return {
+            builds: buildsParsed,
+            inventory: normalizeInventory(rawInventory),
+            inventorySales: normalizer(rawSales)
+        };
+    }
+
+    window.parseImportedWorkbook = function(buffer){
+        const parsed = parseWorkbookComplete(buffer);
+        window.__lastImportedInventory = parsed.inventory;
+        window.__lastImportedInventorySales = parsed.inventorySales;
+        return parsed.builds;
+    };
+
+    window.importFile = function(event){
+        const file = event.target.files && event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e){
+            try{
+                const imported = file.name.toLowerCase().endsWith(".json")
+                    ? parseJsonComplete(e.target.result)
+                    : parseWorkbookComplete(e.target.result);
+
+                const hasData = imported.builds.length > 0 || imported.inventory.length > 0 || imported.inventorySales.length > 0;
+                if(!hasData){
+                    alert("Fișierul nu conține date valide pentru import.");
+                    return;
+                }
+
+                const replace = confirm("OK = înlocuiește datele actuale. Cancel = adaugă datele importate la cele existente.");
+                if(replace){
+                    builds = imported.builds;
+                    inventory = imported.inventory;
+                    if(typeof window.__setInventorySales === "function"){
+                        window.__setInventorySales(imported.inventorySales);
+                    }else{
+                        localStorage.setItem(INVENTORY_SALES_KEY_IMPORT_FIX, JSON.stringify(imported.inventorySales));
+                        window.inventorySales = imported.inventorySales;
+                    }
+                    expandedBuildIds.clear();
+                }else{
+                    builds = builds.concat(imported.builds.map(b=>({...b, name:uniqueImportedName(b.name)})));
+                    inventory = inventory.concat(imported.inventory);
+                    const currentSales = typeof window.__getInventorySales === "function" ? window.__getInventorySales() : (Array.isArray(window.inventorySales) ? window.inventorySales : []);
+                    const mergedSales = currentSales.concat(imported.inventorySales);
+                    if(typeof window.__setInventorySales === "function"){
+                        window.__setInventorySales(mergedSales);
+                    }else{
+                        localStorage.setItem(INVENTORY_SALES_KEY_IMPORT_FIX, JSON.stringify(mergedSales));
+                        window.inventorySales = mergedSales;
+                    }
+                }
+
+                activeBuildId = null;
+                data = [];
+                const saleInput = document.getElementById("salePrice");
+                if(saleInput) saleInput.value = "";
+                persistBuilds();
+                persistInventory();
+                clearSelection();
+                render();
+                renderInventory();
+                renderMonthlyStats();
+                if(typeof renderBusinessSummary === "function") renderBusinessSummary();
+                alert("Import realizat cu succes. Vânzările din stoc au fost restaurate separat, nu ca PC.");
+            }catch(err){
+                console.error(err);
+                alert("Nu am putut importa fișierul. Verifică dacă este exportat din acest program.");
+            }finally{
+                event.target.value = "";
+            }
+        };
+        if(file.name.toLowerCase().endsWith(".json")) reader.readAsText(file);
+        else reader.readAsArrayBuffer(file);
     };
 })();
 </script>
