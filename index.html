@@ -4885,3 +4885,129 @@ init();
     #currentComponentsListWrap table{min-width:650px !important;}
 }
 </style>
+
+<script id="export-sold-components-addon">
+(function(){
+    const INVENTORY_SALES_KEY_EXPORT = "pc_builder_inventory_sales_v1";
+
+    function normalizeSoldComponentsForExport(items){
+        if(!Array.isArray(items)) return [];
+        return items.map(x=>{
+            const qty = Math.max(1, Number(x.qty ?? x.quantity ?? x["Cantitate"] ?? 1) || 1);
+            const costUnit = Number(x.costUnit ?? x.buyPrice ?? x.price ?? x["Preț cumpărare bucata lei"] ?? x["Pret cumparare bucata lei"] ?? x["Preț cumpărare lei"] ?? x["Pret cumparare lei"] ?? 0) || 0;
+            const saleUnit = Number(x.saleUnit ?? x.salePriceUnit ?? x.salePrice ?? x["Preț vânzare bucata lei"] ?? x["Pret vanzare bucata lei"] ?? x["Preț vânzare lei"] ?? x["Pret vanzare lei"] ?? 0) || 0;
+            const cost = Number(x.cost ?? x.costTotal ?? x["Investit total lei"] ?? (costUnit * qty)) || 0;
+            const sale = Number(x.sale ?? x.saleTotal ?? x["Vânzare total lei"] ?? x["Vanzare total lei"] ?? (saleUnit * qty)) || 0;
+            const soldAt = normalizeDateInput(x.soldAt || x.soldDate || x.saleDate || x["Data vânzării"] || x["Data vanzarii"] || todayISODate()) || todayISODate();
+            return {
+                id:String(x.id || x.saleId || x["ID vânzare"] || x["ID vanzare"] || ""),
+                cat:String(x.cat || x.category || x["Categorie"] || "").trim(),
+                name:String(x.name || x.component || x["Componentă"] || x["Componenta"] || "").trim(),
+                qty,
+                costUnit,
+                saleUnit,
+                cost,
+                sale,
+                profit:Number(x.profit ?? x["Profit lei"] ?? (sale - cost)) || 0,
+                soldAt
+            };
+        }).filter(x=>x.cat && x.name && x.soldAt);
+    }
+
+    function getSoldComponentsForExport(){
+        let raw = [];
+        if(Array.isArray(window.inventorySales)){
+            raw = window.inventorySales;
+        }else{
+            try{ raw = JSON.parse(localStorage.getItem(INVENTORY_SALES_KEY_EXPORT) || "[]"); }catch(e){ raw = []; }
+        }
+        return normalizeSoldComponentsForExport(raw);
+    }
+
+    window.createSoldComponentsSheetRows = function(){
+        return getSoldComponentsForExport()
+            .sort((a,b)=>String(b.soldAt).localeCompare(String(a.soldAt)) || String(a.name).localeCompare(String(b.name), "ro"))
+            .map((item,index)=>({
+                "Nr": index + 1,
+                "Data vânzării": item.soldAt,
+                "Luna": monthLabelFromKey(monthKeyFromDate(item.soldAt)),
+                "Categorie": item.cat,
+                "Componentă": item.name,
+                "Cantitate": item.qty,
+                "Preț cumpărare bucata lei": item.costUnit,
+                "Preț vânzare bucata lei": item.saleUnit,
+                "Investit total lei": item.cost,
+                "Vânzare total lei": item.sale,
+                "Profit lei": item.profit
+            }));
+    };
+
+    const oldExportExcel = window.exportExcel;
+    window.exportExcel = function(){
+        if(typeof XLSX === "undefined"){
+            alert("Biblioteca pentru Excel nu s-a încărcat. Verifică internetul și reîncearcă.");
+            return;
+        }
+
+        const exportBuilds = typeof getBuildsForExport === "function" ? getBuildsForExport() : [];
+        const inventoryRows = typeof createInventorySheetRows === "function" ? createInventorySheetRows() : [];
+        const monthlyRows = typeof window.createMonthlySalesSheetRows === "function" ? window.createMonthlySalesSheetRows() : (typeof createMonthlySalesSheetRows === "function" ? createMonthlySalesSheetRows() : []);
+        const soldComponentsRows = window.createSoldComponentsSheetRows();
+
+        if(exportBuilds.length === 0 && inventoryRows.length === 0 && monthlyRows.length === 0 && soldComponentsRows.length === 0){
+            alert("Nu există date pentru export.");
+            return;
+        }
+
+        const usedSheetNames = new Set();
+        const wb = XLSX.utils.book_new();
+
+        if(exportBuilds.length > 0){
+            const summarySheetName = safeSheetName("Sumar PC", usedSheetNames);
+            const pcSheetNames = exportBuilds.map((build,index)=>safeSheetName(build.name || `PC${index + 1}`, usedSheetNames));
+
+            const summaryRows = exportBuilds.map((build,index)=>{
+                const totalBuy = getBuildTotal(build);
+                const sale = Number(build.salePrice) || 0;
+                const profit = sale - totalBuy;
+                const margin = totalBuy > 0 ? (profit / totalBuy) * 100 : 0;
+                const status = build.status === "ready" ? "Gata" : (build.status === "work" ? "În lucru" : (build.sold ? "Vândut" : "Nevândut"));
+                return {
+                    "Nr": index + 1,
+                    "Nume PC": build.name,
+                    "Status": status,
+                    "Data vânzării": build.sold ? getBuildSoldDate(build) : "",
+                    "Luna vânzării": build.sold ? monthLabelFromKey(monthKeyFromDate(getBuildSoldDate(build))) : "",
+                    "Foaie Excel": pcSheetNames[index],
+                    "Număr componente": (build.components || []).length,
+                    "Investit total lei": totalBuy,
+                    "Preț vânzare PC lei": sale,
+                    "Profit lei": profit,
+                    "Adaos %": Number.isFinite(margin) ? Number(margin.toFixed(1)) : 0
+                };
+            });
+
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), summarySheetName);
+
+            exportBuilds.forEach((build,index)=>{
+                const rows = typeof createBuildSheetRows === "function" ? createBuildSheetRows(build) : [];
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), pcSheetNames[index]);
+            });
+        }
+
+        if(monthlyRows.length > 0){
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monthlyRows), safeSheetName("Statistica lunara", usedSheetNames));
+        }
+
+        if(soldComponentsRows.length > 0){
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(soldComponentsRows), safeSheetName("Componente vandute", usedSheetNames));
+        }
+
+        if(inventoryRows.length > 0){
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(inventoryRows), safeSheetName("Stoc componente", usedSheetNames));
+        }
+
+        XLSX.writeFile(wb, "pc_builder_export_complet.xlsx");
+    };
+})();
+</script>
