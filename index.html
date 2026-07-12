@@ -1080,8 +1080,8 @@ tbody tr:hover{background:#f8fbff;}
                     <div class="label">Sold disponibil</div>
                     <div class="value"><span id="investmentBalanceAmount">0</span> lei</div>
                 </div>
-                <div class="investment-stat" title="PC-uri nevândute + valoarea componentelor din stoc + toate vânzările realizate">
-                    <div class="label">Total calculatoare, componente și vânzări</div>
+                <div class="investment-stat" title="PC-uri nevândute + valoarea componentelor din stoc + profitul tuturor vânzărilor">
+                    <div class="label">Total calculatoare, componente și profit</div>
                     <div class="value"><span id="businessCombinedTotal">0</span> lei</div>
                 </div>
             </div>
@@ -5977,7 +5977,7 @@ init();
     }
 
     function calculateComputersComponentsSalesTotal(){
-        // Calculatoare: se includ doar PC-urile nevândute/active.
+        // Calculatoare: suma investită în PC-urile care nu au fost încă vândute.
         const activeComputerInvestment = (typeof builds !== "undefined" && Array.isArray(builds))
             ? builds.filter(build=>!(build && (build.sold || build.status === "sold")))
                 .reduce((sum,build)=>sum + (typeof getBuildTotal === "function" ? getBuildTotal(build) : 0),0)
@@ -5988,18 +5988,23 @@ init();
             ? inventory.reduce((sum,item)=>sum + ((Number(item.price)||0) * (Number(item.qty)||0)),0)
             : 0;
 
-        // Vânzări: toate vânzările realizate (PC, componente din stoc și vânzări manuale).
-        let realizedSales = 0;
+        // Profit: profitul tuturor vânzărilor (PC-uri, componente și vânzări manuale).
+        let realizedProfit = 0;
         try{
             const sales = typeof window.getSoldSalesData === "function" ? window.getSoldSalesData() : [];
-            realizedSales = Array.isArray(sales)
-                ? sales.reduce((sum,item)=>sum + (Number(item.sale)||0),0)
+            realizedProfit = Array.isArray(sales)
+                ? sales.reduce((sum,item)=>{
+                    const profit = Number(item.profit);
+                    return sum + (Number.isFinite(profit)
+                        ? profit
+                        : ((Number(item.sale)||0) - (Number(item.cost)||0)));
+                },0)
                 : 0;
         }catch(error){
             console.error(error);
         }
 
-        return activeComputerInvestment + componentStockValue + realizedSales;
+        return activeComputerInvestment + componentStockValue + realizedProfit;
     }
 
     window.renderInvestmentLedger=function(){
