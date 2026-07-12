@@ -985,6 +985,26 @@ tbody tr:hover{background:#f8fbff;}
             </div>
         </div>
         <div class="panel-body" id="monthlyStatsBody">
+            <div class="manual-sale-form">
+                <div>
+                    <label for="manualSaleDate">Data vânzării</label>
+                    <input id="manualSaleDate" type="date">
+                </div>
+                <div>
+                    <label for="manualSaleName">Denumirea vânzării</label>
+                    <input id="manualSaleName" placeholder="ex: PC Office, monitor, serviciu...">
+                </div>
+                <div>
+                    <label for="manualSaleCost">Investit</label>
+                    <input id="manualSaleCost" type="number" min="0" step="1" placeholder="lei">
+                </div>
+                <div>
+                    <label for="manualSalePrice">Preț vânzare</label>
+                    <input id="manualSalePrice" type="number" min="0" step="1" placeholder="lei">
+                </div>
+                <button class="btn btn-primary" type="button" onclick="addManualSale()">Adaugă vânzarea</button>
+            </div>
+
             <div class="monthly-summary" id="monthlyTotals">
                 <div class="monthly-stat">
                     <div class="label">Calculatoare vândute</div>
@@ -1035,6 +1055,147 @@ tbody tr:hover{background:#f8fbff;}
             </div>
         </div>
     </section>
+
+
+
+    <section class="card chart-card" id="investmentLedgerSection">
+        <div class="card-title">
+            <h2>6. Investiții și cheltuieli</h2>
+            <div class="card-title-actions">
+                <span class="badge" id="investmentLedgerCount">0 investiții • 0 cheltuieli</span>
+                <button class="btn btn-blue btn-small" id="toggleInvestmentChartBtn" type="button" onclick="toggleInvestmentChartVisibility()">Ascunde graficul</button>
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="investment-summary investment-summary-four">
+                <div class="investment-stat investment-stat-in">
+                    <div class="label">Total investit</div>
+                    <div class="value"><span id="investmentTotalAmount">0</span> lei</div>
+                </div>
+                <div class="investment-stat investment-stat-out">
+                    <div class="label">Total cheltuieli</div>
+                    <div class="value"><span id="expenseTotalAmount">0</span> lei</div>
+                </div>
+                <div class="investment-stat" id="investmentBalanceCard">
+                    <div class="label">Sold disponibil</div>
+                    <div class="value"><span id="investmentBalanceAmount">0</span> lei</div>
+                </div>
+                <div class="investment-stat" title="PC-uri nevândute + valoarea componentelor din stoc + toate vânzările realizate">
+                    <div class="label">Total calculatoare, componente și vânzări</div>
+                    <div class="value"><span id="businessCombinedTotal">0</span> lei</div>
+                </div>
+            </div>
+
+            <div id="investmentChartVisual">
+                <div class="investment-chart-wrap">
+                    <canvas id="investmentChart" height="380"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <span class="legend-item"><span class="legend-dot legend-investment-in"></span>Investit</span>
+                    <span class="legend-item"><span class="legend-dot legend-expense-out"></span>Cheltuieli</span>
+                </div>
+            </div>
+
+            <div class="ledger-grid">
+                <section class="ledger-subsection ledger-investors">
+                    <div class="ledger-subsection-head">
+                        <div>
+                            <h3>Cine a investit</h3>
+                            <p>Introdu separat persoana și suma depusă.</p>
+                        </div>
+                        <span class="badge" id="contributionCountBadge">0 investiții</span>
+                    </div>
+
+                    <div class="investment-entry-form contribution-form">
+                        <div>
+                            <label for="contributionDate">Data investiției</label>
+                            <input id="contributionDate" type="date">
+                        </div>
+                        <div>
+                            <label for="contributionInvestor">Cine a investit</label>
+                            <input id="contributionInvestor" list="investmentInvestorOptions" placeholder="ex: Costea, Oleg, Dima...">
+                            <datalist id="investmentInvestorOptions">
+                                <option value="Costea"></option>
+                                <option value="Oleg"></option>
+                                <option value="Dima"></option>
+                            </datalist>
+                        </div>
+                        <div>
+                            <label for="contributionAmount">Suma investită</label>
+                            <input id="contributionAmount" type="number" min="0" step="1" placeholder="lei">
+                        </div>
+                        <button class="btn btn-primary" type="button" onclick="addInvestorContribution()">Adaugă investiția</button>
+                    </div>
+
+                    <h3 class="monthly-table-title">Total investit de fiecare persoană</h3>
+                    <div class="investor-total-list" id="investorTotalList"></div>
+
+                    <div class="table-wrap">
+                        <table class="investment-expense-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Cine a investit</th>
+                                    <th>Suma</th>
+                                    <th>Șterge</th>
+                                </tr>
+                            </thead>
+                            <tbody id="investorContributionList"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="inventory-actions">
+                        <button class="btn btn-secondary" type="button" onclick="resetInvestorContributions()">Reset investiții</button>
+                    </div>
+                </section>
+
+                <section class="ledger-subsection ledger-expenses">
+                    <div class="ledger-subsection-head">
+                        <div>
+                            <h3>Cheltuieli</h3>
+                            <p>Cheltuielile nu mai sunt legate de o anumită persoană.</p>
+                        </div>
+                        <span class="badge" id="expenseCountBadge">0 cheltuieli</span>
+                    </div>
+
+                    <div class="investment-entry-form expense-form">
+                        <div>
+                            <label for="expenseDate">Data cheltuielii</label>
+                            <input id="expenseDate" type="date">
+                        </div>
+                        <div>
+                            <label for="expenseName">Denumirea cheltuielii</label>
+                            <input id="expenseName" placeholder="ex: componente, transport, chirie...">
+                        </div>
+                        <div>
+                            <label for="expenseAmount">Suma cheltuită</label>
+                            <input id="expenseAmount" type="number" min="0" step="1" placeholder="lei">
+                        </div>
+                        <button class="btn btn-primary" type="button" onclick="addSeparateExpense()">Adaugă cheltuiala</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="investment-expense-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Cheltuiala</th>
+                                    <th>Suma</th>
+                                    <th>Șterge</th>
+                                </tr>
+                            </thead>
+                            <tbody id="separateExpenseList"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="inventory-actions">
+                        <button class="btn btn-secondary" type="button" onclick="resetSeparateExpenses()">Reset cheltuieli</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </section>
+
 
 </div>
 
@@ -4836,6 +4997,136 @@ init();
 })();
 </script>
 
+
+<style id="manual-sale-addon-styles">
+.manual-sale-form{display:grid;grid-template-columns:155px minmax(220px,1fr) 145px 145px auto;gap:10px;align-items:end;margin-bottom:14px;padding:14px;border:1px solid var(--line);border-radius:15px;background:#f8fafc;}
+.monthly-type-pill.manual{background:#f3e8ff;color:#7e22ce;}
+@media(max-width:980px){.manual-sale-form{grid-template-columns:repeat(2,minmax(0,1fr));}.manual-sale-form .btn{width:100%;}}
+@media(max-width:620px){.manual-sale-form{grid-template-columns:1fr;}}
+</style>
+<script id="manual-sale-addon-script">
+(function(){
+    const MANUAL_SALES_KEY = "pc_builder_manual_sales_v1";
+    let manualSales = loadManualSales();
+
+    function makeManualSaleId(){
+        return "manual_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
+    }
+
+    function normalizeManualSales(items){
+        if(!Array.isArray(items)) return [];
+        return items.map(x=>{
+            const cost = Number(x.cost ?? x.invested ?? x["Investit total lei"] ?? 0) || 0;
+            const sale = Number(x.sale ?? x.salePrice ?? x["Vânzare total lei"] ?? x["Pret vanzare lei"] ?? 0) || 0;
+            const soldAt = normalizeDateInput(x.soldAt || x.saleDate || x["Data vânzării"] || x["Data vanzarii"] || todayISODate()) || todayISODate();
+            return {
+                id:String(x.id || makeManualSaleId()),
+                source:"manual",
+                typeLabel:"Manual",
+                name:String(x.name || x.title || x["Vânzare"] || x["Vanzare"] || "Vânzare manuală").trim(),
+                soldAt,
+                cost,
+                sale,
+                profit:sale-cost
+            };
+        }).filter(x=>x.name && x.soldAt);
+    }
+
+    function loadManualSales(){
+        try{return normalizeManualSales(JSON.parse(localStorage.getItem(MANUAL_SALES_KEY) || "[]"));}
+        catch(e){return [];}
+    }
+
+    function persistManualSales(){
+        manualSales = normalizeManualSales(manualSales);
+        localStorage.setItem(MANUAL_SALES_KEY, JSON.stringify(manualSales));
+    }
+
+    function manualSalesData(){
+        return manualSales.map(item=>{
+            const monthKey = monthKeyFromDate(item.soldAt);
+            return {...item, monthKey, monthLabel:monthLabelFromKey(monthKey), qty:1};
+        }).filter(item=>item.monthKey);
+    }
+
+    window.addManualSale = function(){
+        const dateEl=document.getElementById("manualSaleDate");
+        const nameEl=document.getElementById("manualSaleName");
+        const costEl=document.getElementById("manualSaleCost");
+        const saleEl=document.getElementById("manualSalePrice");
+        const soldAt=normalizeDateInput(dateEl && dateEl.value) || todayISODate();
+        const name=String(nameEl && nameEl.value || "").trim();
+        const cost=Number(costEl && costEl.value || 0);
+        const sale=Number(saleEl && saleEl.value || 0);
+        if(!name){alert("Introdu denumirea vânzării."); return;}
+        if(!Number.isFinite(cost) || cost < 0 || !Number.isFinite(sale) || sale <= 0){alert("Introdu corect suma investită și prețul de vânzare."); return;}
+        const profit=sale-cost;
+        if(profit < 0 && !confirm(`Vânzarea va avea o pierdere de ${formatMoney(Math.abs(profit))} lei. Continui?`)) return;
+        manualSales.push({id:makeManualSaleId(),source:"manual",typeLabel:"Manual",name,soldAt,cost,sale,profit});
+        persistManualSales();
+        if(nameEl) nameEl.value="";
+        if(costEl) costEl.value="";
+        if(saleEl) saleEl.value="";
+        if(dateEl) dateEl.value=todayISODate();
+        renderMonthlyStats();
+        if(typeof renderBusinessSummary === "function") renderBusinessSummary();
+    };
+
+    window.deleteManualSale = function(id){
+        const sale=manualSales.find(x=>String(x.id)===String(id));
+        if(!sale) return;
+        if(!confirm(`Ștergi vânzarea „${sale.name}”?`)) return;
+        manualSales=manualSales.filter(x=>String(x.id)!==String(id));
+        persistManualSales();
+        renderMonthlyStats();
+        if(typeof renderBusinessSummary === "function") renderBusinessSummary();
+    };
+
+    const previousGetSoldSalesData = window.getSoldSalesData;
+    window.getSoldSalesData = function(){
+        const existing = typeof previousGetSoldSalesData === "function" ? previousGetSoldSalesData() : [];
+        return [...existing, ...manualSalesData()].sort((a,b)=>a.soldAt.localeCompare(b.soldAt) || a.name.localeCompare(b.name,"ro"));
+    };
+
+    const previousUpdateMonthlyTotals = window.updateMonthlyTotals;
+    window.updateMonthlyTotals = function(sales){
+        if(typeof previousUpdateMonthlyTotals === "function") previousUpdateMonthlyTotals(sales);
+        const holder=document.getElementById("monthlyTotals");
+        if(!holder) return;
+        const stats=holder.querySelectorAll(".monthly-stat");
+        if(stats.length>1){
+            const pc=sales.filter(x=>x.source==="pc").length;
+            const stock=sales.filter(x=>x.source==="stoc").length;
+            const manual=sales.filter(x=>x.source==="manual").length;
+            stats[1].innerHTML=`<div class="label">PC / Stoc / Manual</div><div class="value">${formatMoney(pc)} / ${formatMoney(stock)} / ${formatMoney(manual)}</div>`;
+        }
+    };
+
+    const previousRenderMonthlySalesTable = window.renderMonthlySalesTable;
+    window.renderMonthlySalesTable = function(sales){
+        if(typeof previousRenderMonthlySalesTable === "function") previousRenderMonthlySalesTable(sales);
+        const holder=document.getElementById("monthlySalesList");
+        if(!holder) return;
+        holder.querySelectorAll("tr").forEach(row=>{
+            const cells=row.querySelectorAll("td");
+            if(cells.length<8) return;
+            const type=(cells[0].textContent||"").trim();
+            if(type!=="Manual") return;
+            const name=(cells[3].textContent||"").trim();
+            const item=[...sales].find(x=>x.source==="manual" && x.name===name && formatDateRo(x.soldAt)===(cells[2].textContent||"").trim());
+            if(item){
+                const pill=cells[0].querySelector(".monthly-type-pill");
+                if(pill) pill.classList.add("manual");
+                cells[7].innerHTML=`<button class="undo-sale-btn" onclick="deleteManualSale('${escapeHTML(item.id)}')">Șterge</button>`;
+            }
+        });
+    };
+
+    const dateEl=document.getElementById("manualSaleDate");
+    if(dateEl && !dateEl.value) dateEl.value=todayISODate();
+    setTimeout(function(){try{renderMonthlyStats();}catch(e){console.error(e);}},0);
+})();
+</script>
 </body>
 </html>
 <style id="pc-current-components-compact-fit-style">
@@ -5357,5 +5648,514 @@ init();
         if(file.name.toLowerCase().endsWith(".json")) reader.readAsText(file);
         else reader.readAsArrayBuffer(file);
     };
+})();
+</script>
+
+<style id="investment-ledger-addon-styles">
+.investment-summary{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:12px;
+    margin-bottom:14px;
+}
+.investment-stat{
+    min-width:0;
+    padding:13px 14px;
+    border-radius:15px;
+    background:#f8fafc;
+    border:1px solid var(--line);
+}
+.investment-stat-in{background:#eef4ff;border-color:#c6d6ff;}
+.investment-stat-out{background:#fff1f0;border-color:#ffb8b1;}
+.investment-stat.positive{background:var(--green-light);border-color:#b7e4c7;}
+.investment-stat.negative{background:#fff1f0;border-color:#ffb8b1;}
+.investment-stat .label{color:var(--muted);font-size:12px;margin-bottom:6px;}
+.investment-stat .value{font-size:22px;font-weight:bold;white-space:nowrap;}
+.investment-chart-wrap{
+    width:100%;
+    overflow:auto;
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:#fff;
+    padding:12px;
+    margin-bottom:2px;
+}
+#investmentChart{display:block;width:100%;min-width:760px;}
+.legend-investment-in{background:#7c3aed;}
+.legend-expense-out{background:#d92d20;}
+.ledger-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:18px;}
+.ledger-subsection{
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:14px;
+    background:#f8fafc;
+}
+.ledger-investors{border-left:5px solid #7c3aed;}
+.ledger-expenses{border-left:5px solid #d92d20;}
+.ledger-subsection-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:12px;
+}
+.ledger-subsection-head h3{margin:0 0 4px;font-size:17px;}
+.ledger-subsection-head p{margin:0;color:var(--muted);font-size:13px;}
+.investment-entry-form{
+    display:grid;
+    gap:10px;
+    align-items:end;
+    margin-bottom:14px;
+    padding:14px;
+    border:1px solid var(--line);
+    border-radius:15px;
+    background:#fff;
+}
+.contribution-form{grid-template-columns:155px minmax(200px,1fr) 150px auto;}
+.expense-form{grid-template-columns:155px minmax(260px,1fr) 150px auto;}
+.investor-total-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.investor-total-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 12px;
+    border:1px solid #d8dff0;
+    border-radius:999px;
+    background:#fff;
+    color:#344054;
+    font-size:13px;
+}
+.investor-total-chip strong{color:#172033;}
+.investment-expense-table{min-width:620px;}
+.investment-empty-row{text-align:center;color:var(--muted);padding:28px 10px;}
+@media(max-width:1080px){
+    .investment-summary{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .contribution-form,.expense-form{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .investment-entry-form .btn{width:100%;}
+}
+@media(max-width:700px){
+    .investment-summary,.contribution-form,.expense-form{grid-template-columns:1fr;}
+    .ledger-subsection-head{display:block;}
+    .ledger-subsection-head .badge{display:inline-flex;margin-top:8px;}
+}
+</style>
+
+
+<script id="investment-ledger-addon-script">
+(function(){
+    const LEGACY_COMBINED_KEY = "pc_builder_investment_expenses_v1";
+    const INVESTOR_CONTRIBUTIONS_KEY = "pc_builder_investor_contributions_v2";
+    const SEPARATE_EXPENSES_KEY = "pc_builder_separate_expenses_v2";
+    const INVESTMENT_CHART_HIDDEN_KEY = "pc_builder_investment_chart_hidden_v1";
+
+    function makeLedgerId(prefix){
+        return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
+    }
+
+    function normalizeContributions(items){
+        if(!Array.isArray(items)) return [];
+        return items.map(item=>({
+            id:String(item.id || item["ID"] || makeLedgerId("contribution")),
+            date:normalizeDateInput(item.date ?? item.investedAt ?? item["Data"] ?? item["Data investiției"] ?? item["Data investitiei"] ?? todayISODate()) || todayISODate(),
+            investor:String(item.investor ?? item.person ?? item["Cine a investit"] ?? item["Investitor"] ?? item["Persoana"] ?? "").trim(),
+            amount:Number(item.amount ?? item.sum ?? item.value ?? item["Sumă lei"] ?? item["Suma lei"] ?? item["Suma investită lei"] ?? item["Suma investita lei"] ?? 0) || 0
+        })).filter(item=>item.date && item.investor && item.amount>0);
+    }
+
+    function normalizeExpenses(items){
+        if(!Array.isArray(items)) return [];
+        return items.map(item=>({
+            id:String(item.id || item["ID"] || makeLedgerId("expense")),
+            date:normalizeDateInput(item.date ?? item.expenseDate ?? item["Data"] ?? item["Data cheltuielii"] ?? todayISODate()) || todayISODate(),
+            description:String(item.description ?? item.name ?? item.expense ?? item["Cheltuiala"] ?? item["Descriere"] ?? item["Denumire"] ?? "").trim(),
+            amount:Number(item.amount ?? item.sum ?? item.value ?? item["Sumă lei"] ?? item["Suma lei"] ?? item["Suma cheltuită lei"] ?? item["Suma cheltuita lei"] ?? 0) || 0
+        })).filter(item=>item.date && item.description && item.amount>0);
+    }
+
+    function loadJSON(key,normalizer){
+        try{return normalizer(JSON.parse(localStorage.getItem(key) || "[]"));}
+        catch(e){return [];}
+    }
+
+    function migrateLegacyData(){
+        if(localStorage.getItem(INVESTOR_CONTRIBUTIONS_KEY)!==null || localStorage.getItem(SEPARATE_EXPENSES_KEY)!==null) return;
+        let legacy=[];
+        try{legacy=JSON.parse(localStorage.getItem(LEGACY_COMBINED_KEY) || "[]");}catch(e){legacy=[];}
+        if(!Array.isArray(legacy) || legacy.length===0) return;
+
+        const migratedContributions=normalizeContributions(legacy.map(item=>({
+            id:"contribution_" + String(item.id || makeLedgerId("legacy")),
+            date:item.date,
+            investor:item.investor,
+            amount:item.amount
+        })));
+        const migratedExpenses=normalizeExpenses(legacy.map(item=>({
+            id:"expense_" + String(item.id || makeLedgerId("legacy")),
+            date:item.date,
+            description:item.description,
+            amount:item.amount
+        })));
+        localStorage.setItem(INVESTOR_CONTRIBUTIONS_KEY,JSON.stringify(migratedContributions));
+        localStorage.setItem(SEPARATE_EXPENSES_KEY,JSON.stringify(migratedExpenses));
+    }
+
+    migrateLegacyData();
+    let investorContributions=loadJSON(INVESTOR_CONTRIBUTIONS_KEY,normalizeContributions);
+    let separateExpenses=loadJSON(SEPARATE_EXPENSES_KEY,normalizeExpenses);
+    let investmentChartHidden=localStorage.getItem(INVESTMENT_CHART_HIDDEN_KEY)==="1";
+
+    function persistLedger(){
+        investorContributions=normalizeContributions(investorContributions);
+        separateExpenses=normalizeExpenses(separateExpenses);
+        localStorage.setItem(INVESTOR_CONTRIBUTIONS_KEY,JSON.stringify(investorContributions));
+        localStorage.setItem(SEPARATE_EXPENSES_KEY,JSON.stringify(separateExpenses));
+    }
+
+    function money(value){
+        if(typeof formatMoney==="function") return formatMoney(Number(value)||0);
+        return new Intl.NumberFormat("ro-RO",{maximumFractionDigits:2}).format(Number(value)||0);
+    }
+
+    function safe(value){
+        if(typeof escapeHTML==="function") return escapeHTML(String(value ?? ""));
+        return String(value ?? "").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
+    }
+
+    function dateRo(value){
+        if(typeof formatDateRo==="function") return formatDateRo(value);
+        const parts=String(value||"").split("-");
+        return parts.length===3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : String(value||"");
+    }
+
+    function monthKey(value){
+        const normalized=normalizeDateInput(value);
+        return normalized ? normalized.slice(0,7) : "";
+    }
+
+    function monthLabel(key){
+        if(typeof monthLabelFromKey==="function") return monthLabelFromKey(key);
+        const parts=String(key||"").split("-");
+        if(parts.length!==2) return key;
+        const labels=["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Noi","Dec"];
+        return `${labels[Math.max(0,Number(parts[1])-1)]} ${parts[0]}`;
+    }
+
+    window.addInvestorContribution=function(){
+        const dateEl=document.getElementById("contributionDate");
+        const investorEl=document.getElementById("contributionInvestor");
+        const amountEl=document.getElementById("contributionAmount");
+        const date=normalizeDateInput(dateEl && dateEl.value) || todayISODate();
+        const investor=String(investorEl && investorEl.value || "").trim();
+        const amount=Number(amountEl && amountEl.value || 0);
+        if(!investor){alert("Introdu cine a investit.");return;}
+        if(!Number.isFinite(amount) || amount<=0){alert("Introdu o sumă investită corectă.");return;}
+        investorContributions.push({id:makeLedgerId("contribution"),date,investor,amount});
+        persistLedger();
+        if(amountEl) amountEl.value="";
+        if(dateEl) dateEl.value=todayISODate();
+        renderInvestmentLedger();
+    };
+
+    window.addSeparateExpense=function(){
+        const dateEl=document.getElementById("expenseDate");
+        const nameEl=document.getElementById("expenseName");
+        const amountEl=document.getElementById("expenseAmount");
+        const date=normalizeDateInput(dateEl && dateEl.value) || todayISODate();
+        const description=String(nameEl && nameEl.value || "").trim();
+        const amount=Number(amountEl && amountEl.value || 0);
+        if(!description){alert("Introdu denumirea cheltuielii.");return;}
+        if(!Number.isFinite(amount) || amount<=0){alert("Introdu o sumă cheltuită corectă.");return;}
+        separateExpenses.push({id:makeLedgerId("expense"),date,description,amount});
+        persistLedger();
+        if(nameEl) nameEl.value="";
+        if(amountEl) amountEl.value="";
+        if(dateEl) dateEl.value=todayISODate();
+        renderInvestmentLedger();
+    };
+
+    window.deleteInvestorContribution=function(id){
+        const item=investorContributions.find(x=>String(x.id)===String(id));
+        if(!item) return;
+        if(!confirm(`Ștergi investiția lui ${item.investor} de ${money(item.amount)} lei?`)) return;
+        investorContributions=investorContributions.filter(x=>String(x.id)!==String(id));
+        persistLedger();renderInvestmentLedger();
+    };
+
+    window.deleteSeparateExpense=function(id){
+        const item=separateExpenses.find(x=>String(x.id)===String(id));
+        if(!item) return;
+        if(!confirm(`Ștergi cheltuiala „${item.description}” de ${money(item.amount)} lei?`)) return;
+        separateExpenses=separateExpenses.filter(x=>String(x.id)!==String(id));
+        persistLedger();renderInvestmentLedger();
+    };
+
+    window.resetInvestorContributions=function(){
+        if(investorContributions.length===0) return;
+        if(!confirm("Ștergi toate investițiile introduse?")) return;
+        investorContributions=[];persistLedger();renderInvestmentLedger();
+    };
+
+    window.resetSeparateExpenses=function(){
+        if(separateExpenses.length===0) return;
+        if(!confirm("Ștergi toate cheltuielile introduse?")) return;
+        separateExpenses=[];persistLedger();renderInvestmentLedger();
+    };
+
+    window.toggleInvestmentChartVisibility=function(){
+        investmentChartHidden=!investmentChartHidden;
+        localStorage.setItem(INVESTMENT_CHART_HIDDEN_KEY,investmentChartHidden?"1":"0");
+        updateInvestmentChartVisibility();
+        if(!investmentChartHidden) drawInvestmentChart();
+    };
+
+    function updateInvestmentChartVisibility(){
+        const visual=document.getElementById("investmentChartVisual");
+        const button=document.getElementById("toggleInvestmentChartBtn");
+        if(visual) visual.style.display=investmentChartHidden?"none":"block";
+        if(button) button.textContent=investmentChartHidden?"Afișează graficul":"Ascunde graficul";
+    }
+
+    function groupLedgerByMonth(){
+        const map=new Map();
+        investorContributions.forEach(item=>{
+            const key=monthKey(item.date);if(!key)return;
+            const row=map.get(key)||{key,invested:0,spent:0};
+            row.invested+=Number(item.amount)||0;map.set(key,row);
+        });
+        separateExpenses.forEach(item=>{
+            const key=monthKey(item.date);if(!key)return;
+            const row=map.get(key)||{key,invested:0,spent:0};
+            row.spent+=Number(item.amount)||0;map.set(key,row);
+        });
+        return Array.from(map.values()).sort((a,b)=>a.key.localeCompare(b.key)).map(row=>({...row,label:monthLabel(row.key)}));
+    }
+
+    function drawRoundedBar(ctx,x,y,w,h,color,baseY){
+        if(h<=0)return;
+        const radius=Math.min(8,w/4,h/2);
+        ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x,y+radius);ctx.quadraticCurveTo(x,y,x+radius,y);
+        ctx.lineTo(x+w-radius,y);ctx.quadraticCurveTo(x+w,y,x+w,y+radius);ctx.lineTo(x+w,baseY);ctx.lineTo(x,baseY);ctx.closePath();ctx.fill();
+    }
+
+    function drawInvestmentChart(){
+        const canvas=document.getElementById("investmentChart");
+        if(!canvas || investmentChartHidden) return;
+        const rows=groupLedgerByMonth();
+        const wrap=canvas.parentElement;
+        const cssWidth=Math.max(760,wrap?wrap.clientWidth-24:760,rows.length*130+120);
+        const cssHeight=380;
+        const ratio=Math.max(1,window.devicePixelRatio||1);
+        canvas.style.width=cssWidth+"px";canvas.style.height=cssHeight+"px";
+        canvas.width=Math.round(cssWidth*ratio);canvas.height=Math.round(cssHeight*ratio);
+        const ctx=canvas.getContext("2d");ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,cssWidth,cssHeight);
+        ctx.font="13px Arial";ctx.textBaseline="middle";
+        if(rows.length===0){
+            ctx.fillStyle="#667085";ctx.textAlign="center";
+            ctx.fillText("Adaugă investiții sau cheltuieli pentru a vedea graficul.",cssWidth/2,cssHeight/2);return;
+        }
+        const pad={left:76,right:24,top:30,bottom:68};
+        const plotW=cssWidth-pad.left-pad.right,plotH=cssHeight-pad.top-pad.bottom;
+        const maxValue=Math.max(...rows.flatMap(row=>[row.invested,row.spent]),1);
+        const magnitude=Math.pow(10,Math.max(0,String(Math.floor(maxValue)).length-1));
+        const chartMax=Math.ceil(maxValue/magnitude)*magnitude || maxValue;
+        ctx.strokeStyle="#e2e8f0";ctx.fillStyle="#667085";ctx.lineWidth=1;ctx.textAlign="right";
+        for(let i=0;i<=5;i++){
+            const y=pad.top+plotH*i/5,value=chartMax*(1-i/5);
+            ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(cssWidth-pad.right,y);ctx.stroke();ctx.fillText(money(value),pad.left-10,y);
+        }
+        const slot=plotW/rows.length,groupW=Math.min(88,slot*.72),gap=8,barW=(groupW-gap)/2,baseY=pad.top+plotH;
+        rows.forEach((row,index)=>{
+            const center=pad.left+slot*index+slot/2,x1=center-groupW/2,x2=x1+barW+gap;
+            const h1=row.invested/chartMax*plotH,h2=row.spent/chartMax*plotH;
+            drawRoundedBar(ctx,x1,baseY-h1,barW,h1,"#7c3aed",baseY);
+            drawRoundedBar(ctx,x2,baseY-h2,barW,h2,"#d92d20",baseY);
+            ctx.textAlign="center";ctx.font="bold 11px Arial";ctx.fillStyle="#172033";
+            if(row.invested>0)ctx.fillText(money(row.invested),x1+barW/2,Math.max(12,baseY-h1-11));
+            if(row.spent>0)ctx.fillText(money(row.spent),x2+barW/2,Math.max(12,baseY-h2-11));
+            ctx.font="12px Arial";ctx.fillStyle="#475467";ctx.fillText(row.label,center,baseY+25);
+        });
+    }
+
+    function calculateComputersComponentsSalesTotal(){
+        // Calculatoare: se includ doar PC-urile nevândute/active.
+        const activeComputerInvestment = (typeof builds !== "undefined" && Array.isArray(builds))
+            ? builds.filter(build=>!(build && (build.sold || build.status === "sold")))
+                .reduce((sum,build)=>sum + (typeof getBuildTotal === "function" ? getBuildTotal(build) : 0),0)
+            : 0;
+
+        // Componente: valoarea actuală a componentelor rămase în stoc.
+        const componentStockValue = (typeof inventory !== "undefined" && Array.isArray(inventory))
+            ? inventory.reduce((sum,item)=>sum + ((Number(item.price)||0) * (Number(item.qty)||0)),0)
+            : 0;
+
+        // Vânzări: toate vânzările realizate (PC, componente din stoc și vânzări manuale).
+        let realizedSales = 0;
+        try{
+            const sales = typeof window.getSoldSalesData === "function" ? window.getSoldSalesData() : [];
+            realizedSales = Array.isArray(sales)
+                ? sales.reduce((sum,item)=>sum + (Number(item.sale)||0),0)
+                : 0;
+        }catch(error){
+            console.error(error);
+        }
+
+        return activeComputerInvestment + componentStockValue + realizedSales;
+    }
+
+    window.renderInvestmentLedger=function(){
+        const sortedContributions=[...investorContributions].sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(a.investor).localeCompare(String(b.investor),"ro"));
+        const sortedExpenses=[...separateExpenses].sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(a.description).localeCompare(String(b.description),"ro"));
+        const totalInvested=investorContributions.reduce((sum,item)=>sum+(Number(item.amount)||0),0);
+        const totalExpenses=separateExpenses.reduce((sum,item)=>sum+(Number(item.amount)||0),0);
+        const balance=totalInvested-totalExpenses;
+        const investors=new Map();
+        investorContributions.forEach(item=>investors.set(item.investor,(investors.get(item.investor)||0)+(Number(item.amount)||0)));
+
+        const setText=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+        setText("investmentTotalAmount",money(totalInvested));setText("expenseTotalAmount",money(totalExpenses));
+        setText("investmentBalanceAmount",money(balance));
+        setText("businessCombinedTotal",money(calculateComputersComponentsSalesTotal()));
+        setText("investmentLedgerCount",`${investorContributions.length} investiții • ${separateExpenses.length} cheltuieli`);
+        setText("contributionCountBadge",investorContributions.length===1?"1 investiție":`${investorContributions.length} investiții`);
+        setText("expenseCountBadge",separateExpenses.length===1?"1 cheltuială":`${separateExpenses.length} cheltuieli`);
+
+        const balanceCard=document.getElementById("investmentBalanceCard");
+        if(balanceCard){balanceCard.classList.toggle("positive",balance>=0);balanceCard.classList.toggle("negative",balance<0);}
+
+        const investorList=document.getElementById("investorTotalList");
+        if(investorList){
+            const entries=Array.from(investors.entries()).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ro"));
+            investorList.innerHTML=entries.length?entries.map(([name,amount])=>`<span class="investor-total-chip"><span>${safe(name)}</span><strong>${money(amount)} lei</strong></span>`).join(""):`<span class="monthly-empty">Nu sunt încă investiții introduse.</span>`;
+        }
+
+        const contributionHolder=document.getElementById("investorContributionList");
+        if(contributionHolder){
+            contributionHolder.innerHTML=sortedContributions.length?sortedContributions.map(item=>`<tr><td>${safe(dateRo(item.date))}</td><td><strong>${safe(item.investor)}</strong></td><td><strong>${money(item.amount)} lei</strong></td><td><button class="del-btn" type="button" onclick="deleteInvestorContribution('${safe(item.id)}')">Șterge</button></td></tr>`).join(""):`<tr><td colspan="4" class="investment-empty-row">Nu sunt încă investiții introduse.</td></tr>`;
+        }
+
+        const expenseHolder=document.getElementById("separateExpenseList");
+        if(expenseHolder){
+            expenseHolder.innerHTML=sortedExpenses.length?sortedExpenses.map(item=>`<tr><td>${safe(dateRo(item.date))}</td><td>${safe(item.description)}</td><td><strong>${money(item.amount)} lei</strong></td><td><button class="del-btn" type="button" onclick="deleteSeparateExpense('${safe(item.id)}')">Șterge</button></td></tr>`).join(""):`<tr><td colspan="4" class="investment-empty-row">Nu sunt încă cheltuieli introduse.</td></tr>`;
+        }
+        updateInvestmentChartVisibility();drawInvestmentChart();
+    };
+
+    window.__getInvestorContributions=()=>investorContributions.map(item=>({...item}));
+    window.__getSeparateExpenses=()=>separateExpenses.map(item=>({...item}));
+    window.__setInvestorContributions=function(items){investorContributions=normalizeContributions(items);persistLedger();renderInvestmentLedger();};
+    window.__setSeparateExpenses=function(items){separateExpenses=normalizeExpenses(items);persistLedger();renderInvestmentLedger();};
+
+    window.createInvestorContributionSheetRows=function(){
+        return [...investorContributions].sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.investor).localeCompare(String(b.investor),"ro")).map((item,index)=>({"Nr":index+1,"Data":item.date,"Luna":monthLabel(monthKey(item.date)),"Cine a investit":item.investor,"Sumă lei":item.amount}));
+    };
+    window.createSeparateExpenseSheetRows=function(){
+        return [...separateExpenses].sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.description).localeCompare(String(b.description),"ro")).map((item,index)=>({"Nr":index+1,"Data":item.date,"Luna":monthLabel(monthKey(item.date)),"Cheltuiala":item.description,"Sumă lei":item.amount}));
+    };
+
+    function normalizedSheetName(value){return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase();}
+    function appendLedgerSheets(wb){
+        if(!wb||typeof XLSX==="undefined"||!XLSX.utils)return;
+        const existing=new Set((wb.SheetNames||[]).map(normalizedSheetName));
+        const investmentRows=window.createInvestorContributionSheetRows();
+        const expenseRows=window.createSeparateExpenseSheetRows();
+        if(investmentRows.length && !existing.has("investitori")) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(investmentRows),"Investitori");
+        if(expenseRows.length && !existing.has("cheltuieli")) XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(expenseRows),"Cheltuieli");
+    }
+
+    const previousExportExcel=window.exportExcel;
+    window.exportExcel=function(){
+        if(typeof XLSX==="undefined"){alert("Biblioteca pentru Excel nu s-a încărcat. Verifică internetul și reîncearcă.");return;}
+        const hasLedger=investorContributions.length>0||separateExpenses.length>0;
+        const existingSales=typeof window.getSoldSalesData==="function"?window.getSoldSalesData():[];
+        const hasOtherData=(typeof builds!=="undefined"&&Array.isArray(builds)&&builds.length>0)||(typeof inventory!=="undefined"&&Array.isArray(inventory)&&inventory.length>0)||(Array.isArray(existingSales)&&existingSales.length>0);
+        if(!hasOtherData&&hasLedger){const wb=XLSX.utils.book_new();appendLedgerSheets(wb);XLSX.writeFile(wb,"pc_builder_export_complet.xlsx");return;}
+        if(typeof previousExportExcel!=="function")return;
+        const originalWriteFile=XLSX.writeFile;
+        XLSX.writeFile=function(wb,filename){appendLedgerSheets(wb);return originalWriteFile.call(XLSX,wb,filename);};
+        try{previousExportExcel();}finally{XLSX.writeFile=originalWriteFile;}
+    };
+
+    function parseContributionRows(rows){return normalizeContributions((rows||[]).map(row=>({id:row["ID"]||"",date:row["Data"]||row["Data investiției"]||row["Data investitiei"]||"",investor:row["Cine a investit"]||row["Investitor"]||row["Persoana"]||"",amount:row["Sumă lei"]??row["Suma lei"]??row["Suma investită lei"]??row["Suma investita lei"]??0})));}
+    function parseExpenseRows(rows){return normalizeExpenses((rows||[]).map(row=>({id:row["ID"]||"",date:row["Data"]||row["Data cheltuielii"]||"",description:row["Cheltuiala"]||row["Descriere"]||row["Denumire"]||"",amount:row["Sumă lei"]??row["Suma lei"]??row["Suma cheltuită lei"]??row["Suma cheltuita lei"]??0})));}
+    function mergeUnique(current,imported,normalizer,prefix,replace){
+        if(replace)return normalizer(imported);
+        const used=new Set(current.map(x=>String(x.id)));
+        const additions=normalizer(imported).map(item=>{if(used.has(String(item.id)))item={...item,id:makeLedgerId(prefix)};used.add(String(item.id));return item;});
+        return current.concat(additions);
+    }
+    function mergeImportedLedger(contributions,expenses,replace){
+        investorContributions=mergeUnique(investorContributions,contributions,normalizeContributions,"contribution",replace);
+        separateExpenses=mergeUnique(separateExpenses,expenses,normalizeExpenses,"expense",replace);
+        persistLedger();renderInvestmentLedger();
+    }
+    function findSheet(wb,names){
+        if(!wb||!Array.isArray(wb.SheetNames))return "";
+        return wb.SheetNames.find(name=>names.includes(normalizedSheetName(name)))||"";
+    }
+
+    const previousImportFile=window.importFile;
+    window.importFile=function(event){
+        const file=event.target.files&&event.target.files[0];
+        if(!file||typeof previousImportFile!=="function")return;
+        const probe=new FileReader();
+        probe.onload=function(e){
+            let importedContributions=[],importedExpenses=[],hasOtherData=false;
+            try{
+                if(file.name.toLowerCase().endsWith(".json")){
+                    const parsed=JSON.parse(e.target.result);
+                    if(!Array.isArray(parsed)){
+                        importedContributions=normalizeContributions(parsed.investorContributions||parsed.contributions||parsed.investments||parsed.investitori||[]);
+                        importedExpenses=normalizeExpenses(parsed.expenses||parsed.separateExpenses||parsed.cheltuieli||[]);
+                        const legacy=Array.isArray(parsed.investmentExpenses)?parsed.investmentExpenses:[];
+                        if(legacy.length){importedContributions=importedContributions.concat(normalizeContributions(legacy));importedExpenses=importedExpenses.concat(normalizeExpenses(legacy));}
+                        hasOtherData=Boolean((parsed.builds&&parsed.builds.length)||(parsed.inventory&&parsed.inventory.length)||(parsed.inventorySales&&parsed.inventorySales.length)||(parsed.sales&&parsed.sales.length));
+                    }else hasOtherData=true;
+                }else{
+                    const wb=XLSX.read(e.target.result,{type:"array"});
+                    const contributionSheet=findSheet(wb,["investitori","investitii","contributii","investor contributions"]);
+                    const expenseSheet=findSheet(wb,["cheltuieli","expenses"]);
+                    const legacySheet=findSheet(wb,["investitii si cheltuieli","cheltuieli investitii","investment expenses"]);
+                    if(contributionSheet)importedContributions=parseContributionRows(XLSX.utils.sheet_to_json(wb.Sheets[contributionSheet],{defval:""}));
+                    if(expenseSheet)importedExpenses=parseExpenseRows(XLSX.utils.sheet_to_json(wb.Sheets[expenseSheet],{defval:""}));
+                    if(legacySheet){const rows=XLSX.utils.sheet_to_json(wb.Sheets[legacySheet],{defval:""});importedContributions=importedContributions.concat(parseContributionRows(rows));importedExpenses=importedExpenses.concat(parseExpenseRows(rows));}
+                    const ledgerSheets=new Set([contributionSheet,expenseSheet,legacySheet].filter(Boolean));
+                    hasOtherData=wb.SheetNames.some(name=>!ledgerSheets.has(name));
+                }
+            }catch(err){console.error(err);}
+
+            if(importedContributions.length===0&&importedExpenses.length===0){previousImportFile(event);return;}
+            if(!hasOtherData){
+                const replace=confirm("OK = înlocuiește investițiile și cheltuielile actuale. Cancel = adaugă datele importate la cele existente.");
+                mergeImportedLedger(importedContributions,importedExpenses,replace);event.target.value="";alert("Investițiile și cheltuielile au fost importate cu succes.");return;
+            }
+            const originalConfirm=window.confirm;let applied=false;
+            window.confirm=function(message){
+                const answer=originalConfirm(message);
+                if(!applied&&String(message).includes("înlocuiește datele actuale")){applied=true;mergeImportedLedger(importedContributions,importedExpenses,answer);window.confirm=originalConfirm;}
+                return answer;
+            };
+            previousImportFile(event);
+            window.setTimeout(function(){if(!applied)mergeImportedLedger(importedContributions,importedExpenses,false);if(window.confirm!==originalConfirm)window.confirm=originalConfirm;},3000);
+        };
+        if(file.name.toLowerCase().endsWith(".json"))probe.readAsText(file);else probe.readAsArrayBuffer(file);
+    };
+
+    const contributionDate=document.getElementById("contributionDate");
+    const expenseDate=document.getElementById("expenseDate");
+    if(contributionDate&&!contributionDate.value)contributionDate.value=todayISODate();
+    if(expenseDate&&!expenseDate.value)expenseDate.value=todayISODate();
+    // Recalculează totalul și când se modifică PC-urile, stocul sau vânzările.
+    const previousBusinessSummaryForLedger = window.renderBusinessSummary;
+    if(typeof previousBusinessSummaryForLedger === "function"){
+        window.renderBusinessSummary = function(){
+            const result = previousBusinessSummaryForLedger.apply(this, arguments);
+            renderInvestmentLedger();
+            return result;
+        };
+    }
+
+    let resizeTimer=null;
+    window.addEventListener("resize",function(){clearTimeout(resizeTimer);resizeTimer=setTimeout(drawInvestmentChart,120);});
+    renderInvestmentLedger();
 })();
 </script>
